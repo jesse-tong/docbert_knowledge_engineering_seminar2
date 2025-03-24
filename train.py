@@ -85,7 +85,8 @@ def main():
         test_data,
         tokenizer_name=args.bert_model,
         max_length=args.max_length,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        num_classes=args.num_classes
     )
     
     logger.info(f"Train samples: {len(train_data[0])}, "
