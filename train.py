@@ -121,7 +121,7 @@ def main():
     
     # Train the model
     logger.info("Starting training...")
-    save_path = os.path.join(args.output_dir, "best_model.pth")
+    save_path = os.path.join(args.output_dir, "bert-base-uncased")
     trainer.train(epochs=args.epochs, save_path=save_path)
     
     logger.info("Training completed!")

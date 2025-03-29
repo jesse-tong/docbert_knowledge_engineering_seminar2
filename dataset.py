@@ -29,7 +29,7 @@ class DocumentDataset(Dataset):
                           f"but found range [{min_label}, {max_label}]")
             logger.warning(f"Unique label values: {sorted(unique_labels)}")
             
-            # Fix labels by remapping them to start from 0
+            # Fix labels by remapping them to start from 0 (some datasets might have labels starting from 1)
             if min_label != 0:
                 logger.warning(f"Auto-correcting labels to be zero-indexed...")
                 label_map = {original: idx for idx, original in enumerate(sorted(unique_labels))}
@@ -132,8 +132,20 @@ def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-ba
     test_dataset = DocumentDataset(test_texts, test_labels, tokenizer_name, max_length, num_classes)
     
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    if len(train_dataset.texts) == 0:
+        logger.warning("Training dataset is empty. Check your data loading and splitting.")
+        train_loader = None
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    if len(val_dataset.texts) == 0:
+        logger.warning("Validation dataset is empty. Check your data loading and splitting.")
+        val_loader = None
+    else:
+        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+    if len(test_dataset.texts) == 0:
+        logger.warning("Test dataset is empty. Check your data loading and splitting.")
+        test_loader = None
+    else:
+        test_loader = DataLoader(test_dataset, batch_size=batch_size)
     
     return train_loader, val_loader, test_loader
