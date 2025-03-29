@@ -1,1 +1,0 @@
-python .\inference_example.py --model_path "./bert_base_uncased/best_model.pth" --num_classes 4 --class_names "World" "Sports" "Business" "Science" --text_column "Description" --label_column "Class Index" --data_path "./train.csv" --inference_batch_limit 10
