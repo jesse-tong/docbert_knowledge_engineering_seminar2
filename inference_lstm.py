@@ -16,6 +16,12 @@ if __name__ == "__main__":
     parser.add_argument("--class_names", type=str, nargs='+', required=True, help="List of class names for classification")
     parser.add_argument("--inference_batch_limit", type=int, default=-1, help="Limit for inference batch counts")
     parser.add_argument("--print_predictions", type=bool, default=False, help="Print predictions to console")
+
+    # LSTM model arguments
+    parser.add_argument("--embedding_dim", type=int, default=300, help="Dimension of word embeddings in LSTM")
+    parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
+    parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
+    parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
     args = parser.parse_args()
 
     class_names = args.class_names
@@ -39,8 +45,9 @@ if __name__ == "__main__":
     
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
-                           embedding_dim=128,
-                           hidden_dim=64,
+                           embedding_dim=args.embedding_dim,
+                           hidden_dim=args.hidden_dim,
+                           num_layers=args.num_layers,
                            output_dim=args.num_classes)
     
     model_state = torch.load(args.model_path)
