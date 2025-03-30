@@ -1,8 +1,9 @@
 from dataset_lstm import prepare_lstm_data, LSTMTokenizer, LSTMDataset
 from models.lstm_model import DocumentBiLSTM
 from sklearn import metrics
-import torch, logging
+import torch, random
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 import numpy as np
 import argparse
 
@@ -42,13 +43,12 @@ if __name__ == "__main__":
                                     text_col=args.text_column,
                                     label_col=args.label_column,
                                     batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer, return_datasets=True)
+                                    max_seq_length=args.max_seq_length, 
+                                    val_split=0.0, test_split=1.0, 
+                                    tokenizer=tokenizer, return_datasets=True,
+                                    seed=random.randint(0, 10000))
 
-    _, _, test_loader, vocab_size = prepare_lstm_data(args.data_path,
-                                  text_col=args.text_column,
-                                  label_col=args.label_column,
-                                  batch_size=args.batch_size,
-                                  max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
     
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
