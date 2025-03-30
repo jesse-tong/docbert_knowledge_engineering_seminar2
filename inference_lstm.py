@@ -30,9 +30,6 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
     parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
-    # Add after parsing arguments
-    parser.add_argument("--optimize_mapping", action="store_true", 
-                    help="Automatically find the optimal class mapping")
     args = parser.parse_args()
 
     class_names = args.class_names
@@ -57,57 +54,6 @@ if __name__ == "__main__":
                                     seed=random.randint(0, 10000))
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
-    
-    # Replace the fixed mapping with this dynamic approach
-    if args.optimize_mapping:
-        print("Finding optimal class mapping...")
-        
-        # Create a small validation set for mapping optimization
-        val_size = min(50, len(test_dataset))
-        val_indices = np.random.choice(len(test_dataset), val_size, replace=False)
-        val_subset = torch.utils.data.Subset(test_dataset, val_indices)
-        val_loader = DataLoader(val_subset, batch_size=args.batch_size)
-        
-        # Try all possible class mappings (permutations)
-        best_mapping = None
-        best_accuracy = 0
-        
-        # Get all possible permutations for the class indices
-        all_permutations = list(permutations(range(args.num_classes)))
-        
-        for perm in all_permutations:
-            # Create mapping dictionary
-            mapping = {i: perm[i] for i in range(args.num_classes)}
-            
-            # Evaluate with this mapping
-            val_preds = []
-            val_labels = []
-            
-            with torch.no_grad():
-                for batch in val_loader:
-                    input_ids = batch['input_ids'].to(device)
-                    labels = batch['label'].to(device)
-                    
-                    outputs = model(input_ids)
-                    predictions = torch.argmax(outputs, dim=1)
-                    
-                    # Apply mapping
-                    mapped_preds = torch.tensor([mapping[p.item()] for p in predictions], device=device)
-                    
-                    val_preds.extend(mapped_preds.cpu().numpy())
-                    val_labels.extend(labels.cpu().numpy())
-            
-            # Calculate accuracy
-            accuracy = metrics.accuracy_score(val_labels, val_preds)
-            
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_mapping = mapping
-                
-        class_map = best_mapping
-        print(f"Optimal class mapping found: {class_map}")
-        print(f"Validation accuracy with this mapping: {best_accuracy:.4f}")
-        print(f"Class names in new order: {[class_names[class_map[i]] for i in range(len(class_names))]}")
 
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
@@ -125,44 +71,6 @@ if __name__ == "__main__":
 
     all_labels = np.array([], dtype=int)
     all_predictions = np.array([], dtype=int)
-    
-    # Add this after model loading and before inference
-    
-    # Debug: Print model information
-    print(f"Model loaded with vocab_size={tokenizer.vocab_size}")
-    print(f"Model state contains keys: {model_state.keys()}")
-    if 'config' in model_state:
-        print(f"Model config: {model_state['config']}")
-
-    # Create a verification step to check class alignment
-    print("Class mapping verification:")
-    print(f"Classes provided: {class_names}")
-    print("First 5 examples with predictions:")
-
-    # Check first 5 examples
-    verify_loader = DataLoader(test_dataset, batch_size=5)
-    batch = next(iter(verify_loader))
-    with torch.no_grad():
-        input_ids = batch['input_ids'].to(device)
-        labels = batch['label'].to(device)
-        
-        outputs = model(input_ids)
-        probs = F.softmax(outputs, dim=1)
-        predictions = torch.argmax(probs, dim=1)
-        
-        for i in range(len(input_ids)):
-            text = test_dataset.get_text_(i)
-            true_label = labels[i].item()
-            pred_label = predictions[i].item()
-            confidence = probs[i][pred_label].item()
-            
-            print(f"Example {i}:")
-            print(f"  Text: {text['text']}...")
-            print(f"  True label index: {true_label}, Expected class: {class_names[true_label]}")
-            print(f"  Predicted index: {pred_label}, Predicted class: {class_names[pred_label]}")
-            print(f"  Confidence: {confidence:.2%}")
-            print(f"  All probabilities: {probs[i].cpu().numpy()}")
-            print("---")
 
     # Inference
     batch_count = 0
@@ -176,13 +84,7 @@ if __name__ == "__main__":
             probs = F.softmax(outputs, dim=1)
             predictions = torch.argmax(probs, dim=1)
 
-
-            # In your inference loop, apply the mapping to predictions
-            if args.optimize_mapping:
-                predictions_mapped = torch.tensor([class_map[p.item()] for p in predictions], device=device)
-                all_predictions = np.append(all_predictions, predictions_mapped.cpu().numpy())
-            else:
-                all_predictions = np.append(all_predictions, predictions.cpu().numpy())
+            all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
             if args.print_predictions:
                 for i in range(len(predictions)):
@@ -192,23 +94,6 @@ if __name__ == "__main__":
                 break
 
             batch_count += 1
-
-    # Add before inference
-    label_counts = np.bincount(all_labels)
-    print(f"Label distribution: {label_counts}")
-    print(f"Label percentages: {label_counts/sum(label_counts)}")
-
-    # Add after inference
-    print("\nExample misclassifications:")
-    misclassified = np.where(all_predictions != all_labels)[0][:5]  # First 5 errors
-    for idx in misclassified:
-        text = test_dataset.get_text_(idx)['text'][:100] + "..."
-        true_class = class_names[all_labels[idx]]
-        pred_class = class_names[all_predictions[idx]]
-        print(f"Text: {text}")
-        print(f"True: {true_class}, Predicted: {pred_class}")
-        print("---")
-
 
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
