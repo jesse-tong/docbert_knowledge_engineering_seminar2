@@ -78,7 +78,7 @@ if __name__ == "__main__":
             outputs = model(input_ids)
 
             if batch_count == 0 or batch_count == 1:
-                print(f"Input IDs: {input_ids}")
+                print(f"Labels: {labels}")
                 print(f"Outputs: {outputs}")
 
             predictions = torch.argmax(outputs, dim=1)
