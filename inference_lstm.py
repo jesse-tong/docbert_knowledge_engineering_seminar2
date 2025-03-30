@@ -24,7 +24,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Prepare data
-    tokenizer = LSTMTokenizer(max_length=args.max_seq_length)
+    tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
     test_dataset, _, _, vocab_size = prepare_lstm_data(args.data_path,
                                     text_col=args.text_column,
                                     label_col=args.label_column,
