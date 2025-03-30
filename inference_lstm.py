@@ -43,7 +43,12 @@ if __name__ == "__main__":
                            hidden_dim=64,
                            output_dim=args.num_classes)
     
-    model.load_state_dict(torch.load(args.model_path))
+    model_state = torch.load(args.model_path)
+    if 'model_state_dict' in model_state:
+        model.load_state_dict(model_state['model_state_dict'])
+    else:
+        model.load_state_dict(model_state)
+
     model = model.to(device)
 
     all_labels = np.array([], dtype=int)
