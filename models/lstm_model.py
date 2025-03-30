@@ -34,10 +34,30 @@ class DocumentBiLSTM(nn.Module):
         embedded = self.dropout(embedded)
         
         if attention_mask is not None:
-            # Create packed sequence for variable length sequences
-            # This is a simplified version - in practice you'd use pack_padded_sequence
-            # but that requires knowing the actual sequence lengths
-            pass
+            # Convert attention mask to sequence lengths
+            # First, get the length of each sequence by summing the attention mask
+            seq_lengths = attention_mask.sum(dim=1).to(torch.int64).cpu()
+            
+            # Sort sequences by decreasing length for pack_padded_sequence
+            seq_lengths, indices = torch.sort(seq_lengths, descending=True)
+            embedded = embedded[indices]
+            
+            # Pack the embedded sequences
+            packed_embedded = nn.utils.rnn.pack_padded_sequence(
+                embedded, seq_lengths, batch_first=True, enforce_sorted=True
+            )
+            
+            # Pass the packed sequence through LSTM
+            packed_output, (hidden, cell) = self.lstm(packed_embedded)
+            
+            # Unpack the sequence
+            output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
+            
+            # Restore the original batch order
+            _, restore_indices = torch.sort(indices)
+        else:
+            # Standard processing without masking
+            output, (hidden, cell) = self.lstm(embedded)
             
         # output = [batch size, seq len, hid dim * num directions]
         # hidden = [n layers * num directions, batch size, hid dim]

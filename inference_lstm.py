@@ -78,9 +78,10 @@ if __name__ == "__main__":
         for batch in test_loader:
             input_ids = batch['input_ids'].to(device)
             labels = batch['label'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
             all_labels = np.append(all_labels, labels.cpu().numpy())
 
-            outputs = model(input_ids)
+            outputs = model(input_ids, attention_mask=attention_mask)
             probs = F.softmax(outputs, dim=1)
             predictions = torch.argmax(probs, dim=1)
 
