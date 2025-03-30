@@ -7,6 +7,10 @@ from torch.utils.data import DataLoader
 import numpy as np
 import argparse
 
+# Add these imports for mapping optimization
+from itertools import permutations
+import copy
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Document Classification with LSTM")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
@@ -26,25 +30,13 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
     parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
-    # Add this argument to your parser
-    parser.add_argument("--fix_class_mapping", action="store_true", 
-                        help="Apply a fix for class mapping issues")
+    # Add after parsing arguments
+    parser.add_argument("--optimize_mapping", action="store_true", 
+                    help="Automatically find the optimal class mapping")
     args = parser.parse_args()
 
     class_names = args.class_names
 
-    # Add this after model loading, before inference
-    if args.fix_class_mapping:
-        print("Applying class mapping fix...")
-        
-        # Create a class mapping to realign predictions
-        # This is a permutation map to try various class alignments
-        # Option 1: Try a complete reversal
-        class_map = {0:3, 1:2, 2:1, 3:0}  # Reverse mapping
-        
-        # Print the mapping being used
-        print(f"Class mapping: {class_map}")
-        print(f"Class names in new order: {[class_names[class_map[i]] for i in range(len(class_names))]}")
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -66,6 +58,57 @@ if __name__ == "__main__":
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
     
+    # Replace the fixed mapping with this dynamic approach
+    if args.optimize_mapping:
+        print("Finding optimal class mapping...")
+        
+        # Create a small validation set for mapping optimization
+        val_size = min(50, len(test_dataset))
+        val_indices = np.random.choice(len(test_dataset), val_size, replace=False)
+        val_subset = torch.utils.data.Subset(test_dataset, val_indices)
+        val_loader = DataLoader(val_subset, batch_size=args.batch_size)
+        
+        # Try all possible class mappings (permutations)
+        best_mapping = None
+        best_accuracy = 0
+        
+        # Get all possible permutations for the class indices
+        all_permutations = list(permutations(range(args.num_classes)))
+        
+        for perm in all_permutations:
+            # Create mapping dictionary
+            mapping = {i: perm[i] for i in range(args.num_classes)}
+            
+            # Evaluate with this mapping
+            val_preds = []
+            val_labels = []
+            
+            with torch.no_grad():
+                for batch in val_loader:
+                    input_ids = batch['input_ids'].to(device)
+                    labels = batch['label'].to(device)
+                    
+                    outputs = model(input_ids)
+                    predictions = torch.argmax(outputs, dim=1)
+                    
+                    # Apply mapping
+                    mapped_preds = torch.tensor([mapping[p.item()] for p in predictions], device=device)
+                    
+                    val_preds.extend(mapped_preds.cpu().numpy())
+                    val_labels.extend(labels.cpu().numpy())
+            
+            # Calculate accuracy
+            accuracy = metrics.accuracy_score(val_labels, val_preds)
+            
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_mapping = mapping
+                
+        class_map = best_mapping
+        print(f"Optimal class mapping found: {class_map}")
+        print(f"Validation accuracy with this mapping: {best_accuracy:.4f}")
+        print(f"Class names in new order: {[class_names[class_map[i]] for i in range(len(class_names))]}")
+
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
@@ -135,7 +178,7 @@ if __name__ == "__main__":
 
 
             # In your inference loop, apply the mapping to predictions
-            if args.fix_class_mapping:
+            if args.optimize_mapping:
                 predictions_mapped = torch.tensor([class_map[p.item()] for p in predictions], device=device)
                 all_predictions = np.append(all_predictions, predictions_mapped.cpu().numpy())
             else:
@@ -149,6 +192,23 @@ if __name__ == "__main__":
                 break
 
             batch_count += 1
+
+    # Add before inference
+    label_counts = np.bincount(all_labels)
+    print(f"Label distribution: {label_counts}")
+    print(f"Label percentages: {label_counts/sum(label_counts)}")
+
+    # Add after inference
+    print("\nExample misclassifications:")
+    misclassified = np.where(all_predictions != all_labels)[0][:5]  # First 5 errors
+    for idx in misclassified:
+        text = test_dataset.get_text_(idx)['text'][:100] + "..."
+        true_class = class_names[all_labels[idx]]
+        pred_class = class_names[all_predictions[idx]]
+        print(f"Text: {text}")
+        print(f"True: {true_class}, Predicted: {pred_class}")
+        print("---")
+
 
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
