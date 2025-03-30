@@ -132,9 +132,10 @@ class LSTMDataset(Dataset):
 
 def prepare_lstm_data(data_path, text_col='text', label_col='label', 
                      max_vocab_size=30000, max_seq_length=512,
-                     val_split=0.1, test_split=0.1, batch_size=32, seed=42, return_datasets=False, return_tokenizer=False):
+                     val_split=0.1, test_split=0.1, batch_size=32, seed=42, tokenizer=None, return_datasets=False, return_tokenizer=False):
     """
     Load data and prepare for LSTM model
+    tokenizer: Custom LSTMTokenizer to use instead of creating a new one
     """
     # Load data
     if data_path.endswith('.csv'):
@@ -177,7 +178,8 @@ def prepare_lstm_data(data_path, text_col='text', label_col='label',
     test_texts, test_labels = texts[test_indices], labels[test_indices]
     
     # Create tokenizer and fit on training data
-    tokenizer = LSTMTokenizer(max_vocab_size=max_vocab_size, max_seq_length=max_seq_length)
+    if tokenizer is None:
+        tokenizer = LSTMTokenizer(max_vocab_size=max_vocab_size, max_seq_length=max_seq_length)
     tokenizer.fit(train_texts)
     
     # Create datasets

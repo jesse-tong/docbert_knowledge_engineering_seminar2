@@ -34,28 +34,20 @@ if __name__ == "__main__":
     model_state = torch.load(args.model_path)
     
     tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
-    #tokenizer.from_json(args.tokenizer_path)
-
-    # Load tokenizer
-    _, _, _, tokenizer = prepare_lstm_data("./train.csv",
-                                    text_col=args.text_column,
-                                    label_col=args.label_column,
-                                    batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=True, return_tokenizer=True)
-    tokenizer.save(args.tokenizer_path)
+    tokenizer.from_json(args.tokenizer_path)
 
     # Prepare data
     _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
                                     text_col=args.text_column,
                                     label_col=args.label_column,
                                     batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, return_datasets=True)
+                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer)
 
     test_loader, _, _, vocab_size = prepare_lstm_data(args.data_path,
                                   text_col=args.text_column,
                                   label_col=args.label_column,
                                   batch_size=args.batch_size,
-                                  max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0)
+                                  max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, tokenizer=tokenizer)
     
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.max_vocab_size,
