@@ -67,6 +67,44 @@ if __name__ == "__main__":
     all_labels = np.array([], dtype=int)
     all_predictions = np.array([], dtype=int)
     
+    # Add this after model loading and before inference
+    
+    # Debug: Print model information
+    print(f"Model loaded with vocab_size={tokenizer.vocab_size}")
+    print(f"Model state contains keys: {model_state.keys()}")
+    if 'config' in model_state:
+        print(f"Model config: {model_state['config']}")
+
+    # Create a verification step to check class alignment
+    print("Class mapping verification:")
+    print(f"Classes provided: {class_names}")
+    print("First 5 examples with predictions:")
+
+    # Check first 5 examples
+    verify_loader = DataLoader(test_dataset, batch_size=5)
+    batch = next(iter(verify_loader))
+    with torch.no_grad():
+        input_ids = batch['input_ids'].to(device)
+        labels = batch['label'].to(device)
+        
+        outputs = model(input_ids)
+        probs = F.softmax(outputs, dim=1)
+        predictions = torch.argmax(probs, dim=1)
+        
+        for i in range(len(input_ids)):
+            text = test_dataset.get_text_(i)
+            true_label = labels[i].item()
+            pred_label = predictions[i].item()
+            confidence = probs[i][pred_label].item()
+            
+            print(f"Example {i}:")
+            print(f"  Text: {text[:100]}...")
+            print(f"  True label index: {true_label}, Expected class: {class_names[true_label]}")
+            print(f"  Predicted index: {pred_label}, Predicted class: {class_names[pred_label]}")
+            print(f"  Confidence: {confidence:.2%}")
+            print(f"  All probabilities: {probs[i].cpu().numpy()}")
+            print("---")
+
     # Inference
     batch_count = 0
     with torch.no_grad():
@@ -79,20 +117,6 @@ if __name__ == "__main__":
             probs = F.softmax(outputs, dim=1)
             predictions = torch.argmax(probs, dim=1)
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
-
-            # Add this near the beginning of your inference loop
-            if batch_count == 0:
-                # Examine first batch
-                input_ids_sample = input_ids[0].cpu().numpy()
-                print(f"Sample input_ids: {input_ids_sample[:10]}...")
-                
-                # Check raw model outputs
-                import torch.nn.functional as F
-                raw_probs = F.softmax(outputs, dim=1)
-                print(f"Raw prediction probabilities for first 3 examples:")
-                for i in range(min(3, len(input_ids))):
-                    probs = raw_probs[i].cpu().numpy()
-                    print(f"Example {i}: Class distributions: {probs}")
 
             if args.print_predictions:
                 for i in range(len(predictions)):
