@@ -3,6 +3,7 @@ import os
 import logging
 import torch
 import random
+import json
 import numpy as np
 from model import DocBERT
 from models.lstm_model import DocumentBiLSTM
@@ -127,15 +128,16 @@ def main():
     
     # Create LSTM data loaders
     logger.info("Creating LSTM data loaders...")
-    lstm_train_loader, lstm_val_loader, lstm_test_loader, vocab_size = prepare_lstm_data(
+    lstm_train_loader, lstm_val_loader, lstm_test_loader, tokenizer = prepare_lstm_data(
         args.data_path,
         text_col=args.text_column,
         label_col=args.label_column,
         max_vocab_size=30000,
         max_seq_length=args.max_seq_length,
         batch_size=args.batch_size,
-        seed=args.seed
+        seed=args.seed, return_tokenizer=True
     )
+    vocab_size = tokenizer.vocab_size
     
     logger.info(f"LSTM Vocabulary size: {vocab_size}")
     
@@ -187,6 +189,10 @@ def main():
     save_path = os.path.join(args.output_dir, "distilled_lstm_model.pth")
     trainer.train(epochs=args.epochs, save_path=save_path)
     
+    # Save the tokenizer
+    tokenizer_path = os.path.join(args.output_dir, "tokenizer.json")
+    tokenizer.save(tokenizer_path)
+
     logger.info("Knowledge distillation completed!")
 
 if __name__ == "__main__":

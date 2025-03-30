@@ -17,5 +17,5 @@ python ./distill_bert_to_lstm.py --bert_model bert-base-uncased --bert_model_pat
 
 - Inference with distilled LSTM model (test_data.csv is test dataset with 4 classes like ag_news)
 ```
-python ./inference_lstm.py --model_path "./docbert_lstm/distilled_lstm_model.pth" --num_classes 4 --class_names "World" "Sports" "Business" "Science" --text_column "Description" --label_column "Class Index" --data_path "./test_data.csv" --inference_batch_limit 10
+python ./inference_lstm.py --model_path "./docbert_lstm/distilled_lstm_model.pth" --num_classes 4 --class_names "World" "Sports" "Business" "Science" --text_column "Description" --label_column "Class Index" --data_path "./test_data.csv" --inference_batch_limit 10 --tokenizer_path "./docbert_lstm/tokenizer.json"
 ```

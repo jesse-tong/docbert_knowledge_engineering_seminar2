@@ -76,6 +76,29 @@ class LSTMTokenizer:
             'input_ids': torch.tensor(ids, dtype=torch.long),
             'attention_mask': torch.tensor(attention_mask, dtype=torch.long)
         }
+    
+    def from_json(self, json_file):
+        """Load tokenizer from JSON file container word2idx dict"""
+        import json
+        with open(json_file, 'r') as f:
+            data = json.load(f)
+            self.word2idx = data
+            self.idx2word = {v: k for k, v in self.word2idx.items()}
+            # Add pad and unk tokens
+            self.word2idx['<pad>'] = 0
+            self.word2idx['<unk>'] = 1
+            self.idx2word[0] = '<pad>'
+            self.idx2word[1] = '<unk>'
+            # Update vocab size
+            self.vocab_size = len(self.word2idx)
+            logger.info(f"Loaded tokenizer with {self.vocab_size} tokens")
+
+    def save(self, json_file):
+        """Save tokenizer word2idx to JSON file"""
+        import json
+        with open(json_file, 'w') as f:
+            json.dump(self.word2idx, f, ensure_ascii=False, indent=4)
+            logger.info(f"Tokenizer saved to {json_file}")
 
 class LSTMDataset(Dataset):
     """Dataset for LSTM model"""
@@ -109,7 +132,7 @@ class LSTMDataset(Dataset):
 
 def prepare_lstm_data(data_path, text_col='text', label_col='label', 
                      max_vocab_size=30000, max_seq_length=512,
-                     val_split=0.1, test_split=0.1, batch_size=32, seed=42, return_datasets=False):
+                     val_split=0.1, test_split=0.1, batch_size=32, seed=42, return_datasets=False, return_tokenizer=False):
     """
     Load data and prepare for LSTM model
     """
@@ -162,8 +185,10 @@ def prepare_lstm_data(data_path, text_col='text', label_col='label',
     val_dataset = LSTMDataset(val_texts, val_labels, tokenizer)
     test_dataset = LSTMDataset(test_texts, test_labels, tokenizer)
 
-    if return_datasets:
+    if return_datasets and not return_tokenizer:
         return train_dataset, val_dataset, test_dataset, tokenizer.vocab_size
+    elif return_tokenizer and not return_datasets:
+        return train_dataset, val_dataset, test_dataset, tokenizer
     
     # Create data loaders
     if len(train_dataset.texts) == 0:
@@ -184,4 +209,7 @@ def prepare_lstm_data(data_path, text_col='text', label_col='label',
     else:
         test_loader = DataLoader(test_dataset, batch_size=batch_size)
     
-    return train_loader, val_loader, test_loader, tokenizer.vocab_size
+    if not return_tokenizer:
+        return train_loader, val_loader, test_loader, tokenizer.vocab_size
+    else:
+        return train_loader, val_loader, test_loader, tokenizer

@@ -1,7 +1,7 @@
 from dataset_lstm import prepare_lstm_data, LSTMTokenizer, LSTMDataset
 from models.lstm_model import DocumentBiLSTM
 from sklearn import metrics
-import torch
+import torch, logging
 import numpy as np
 import argparse
 
@@ -9,6 +9,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Document Classification with LSTM")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model")
+    parser.add_argument("--tokenizer_path", type=str, required=True, help="Path to the tokenizer")
     parser.add_argument("--max_seq_length", type=int, default=512, help="Maximum sequence length for LSTM")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and evaluation")
     parser.add_argument("--num_classes", type=int, required=True, help="Number of classes for classification")
@@ -30,13 +31,26 @@ if __name__ == "__main__":
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Prepare data
+    model_state = torch.load(args.model_path)
+    
     tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
-    test_dataset, _, _, vocab_size = prepare_lstm_data(args.data_path,
+    #tokenizer.from_json(args.tokenizer_path)
+
+    _, _, _, tokenizer = prepare_lstm_data("./test_data.csv",
                                     text_col=args.text_column,
                                     label_col=args.label_column,
                                     batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=True)
+                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=False, return_tokenizer=True)
+    
+    tokenizer.save(args.tokenizer_path)
+
+    # Prepare data
+    
+    _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
+                                    text_col=args.text_column,
+                                    label_col=args.label_column,
+                                    batch_size=args.batch_size,
+                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, return_datasets=True)
 
     test_loader, _, _, vocab_size = prepare_lstm_data(args.data_path,
                                   text_col=args.text_column,
@@ -50,8 +64,6 @@ if __name__ == "__main__":
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
                            output_dim=args.num_classes)
-    
-    model_state = torch.load(args.model_path)
 
     if 'vocab_size' in model_state:
         vocab_size = model_state['vocab_size']
@@ -76,10 +88,6 @@ if __name__ == "__main__":
             all_labels = np.append(all_labels, labels.cpu().numpy())
 
             outputs = model(input_ids)
-
-            if batch_count == 0 or batch_count == 1:
-                print(f"Labels: {labels}")
-                print(f"Outputs: {outputs}")
 
             predictions = torch.argmax(outputs, dim=1)
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
