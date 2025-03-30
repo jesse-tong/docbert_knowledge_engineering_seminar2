@@ -34,18 +34,9 @@ if __name__ == "__main__":
     model_state = torch.load(args.model_path)
     
     tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
-    #tokenizer.from_json(args.tokenizer_path)
-
-    _, _, _, tokenizer = prepare_lstm_data("./test_data.csv",
-                                    text_col=args.text_column,
-                                    label_col=args.label_column,
-                                    batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=False, return_tokenizer=True)
-    
-    tokenizer.save(args.tokenizer_path)
+    tokenizer.from_json(args.tokenizer_path)
 
     # Prepare data
-    
     _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
                                     text_col=args.text_column,
                                     label_col=args.label_column,
@@ -64,10 +55,6 @@ if __name__ == "__main__":
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
                            output_dim=args.num_classes)
-
-    if 'vocab_size' in model_state:
-        vocab_size = model_state['vocab_size']
-        tokenizer.vocab_size = vocab_size
 
     if 'model_state_dict' in model_state:
         model.load_state_dict(model_state['model_state_dict'])
