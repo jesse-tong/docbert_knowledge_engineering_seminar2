@@ -36,6 +36,12 @@ if __name__ == "__main__":
     tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
     tokenizer.from_json(args.tokenizer_path)
 
+    print('Tokenizer vocab size: ', tokenizer.vocab_size)
+    print('Tokenizer max vocab size: ', tokenizer.max_vocab_size)
+    print('Tokenizer max seq length: ', tokenizer.max_seq_length)
+    print('Tokenizer 100 first word2idx: ', tokenizer.word2idx[:100])
+    print('Tokenizer 100 first idx2word: ', tokenizer.idx2word[:100])
+
     # Prepare data
     _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
                                     text_col=args.text_column,
