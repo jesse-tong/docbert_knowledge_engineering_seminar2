@@ -1,6 +1,7 @@
 from dataset_lstm import prepare_lstm_data, LSTMTokenizer, LSTMDataset
 from models.lstm_model import DocumentBiLSTM
-import sklearn, torch
+from sklearn import metrics
+import torch
 import numpy as np
 import argparse
 
@@ -89,10 +90,10 @@ if __name__ == "__main__":
 
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
-    accuracy = sklearn.metrics.accuracy_score(all_labels, all_predictions)
-    f1 = sklearn.metrics.f1_score(all_labels, all_predictions, average='weighted')
-    precision = sklearn.metrics.precision_score(all_labels, all_predictions, average='weighted')
-    recall = sklearn.metrics.recall_score(all_labels, all_predictions, average='weighted')
+    accuracy = metrics.accuracy_score(all_labels, all_predictions)
+    f1 = metrics.f1_score(all_labels, all_predictions, average='weighted')
+    precision = metrics.precision_score(all_labels, all_predictions, average='weighted')
+    recall = metrics.recall_score(all_labels, all_predictions, average='weighted')
 
     print(f"Accuracy: {accuracy}")
     print(f"F1 Score: {f1}")
