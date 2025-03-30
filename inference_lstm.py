@@ -38,7 +38,7 @@ if __name__ == "__main__":
                                   max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0)
     
     # Load model
-    model = DocumentBiLSTM(input_dim=tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
                            embedding_dim=128,
                            hidden_dim=64,
                            output_dim=args.num_classes)
