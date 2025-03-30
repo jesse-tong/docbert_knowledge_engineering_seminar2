@@ -28,14 +28,12 @@ if __name__ == "__main__":
     test_dataset, _, _, vocab_size = prepare_lstm_data(args.data_path,
                                     text_col=args.text_column,
                                     label_col=args.label_column,
-                                    tokenizer=tokenizer,
                                     batch_size=args.batch_size,
                                     max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=True)
 
     test_loader, _, _, vocab_size = prepare_lstm_data(args.data_path,
                                   text_col=args.text_column,
                                   label_col=args.label_column,
-                                  tokenizer=tokenizer,
                                   batch_size=args.batch_size,
                                   max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0)
     
