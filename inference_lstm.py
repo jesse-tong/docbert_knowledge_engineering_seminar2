@@ -2,6 +2,7 @@ from dataset_lstm import prepare_lstm_data, LSTMTokenizer, LSTMDataset
 from models.lstm_model import DocumentBiLSTM
 from sklearn import metrics
 import torch, logging
+import torch.nn.functional as F
 import numpy as np
 import argparse
 
@@ -75,8 +76,8 @@ if __name__ == "__main__":
             all_labels = np.append(all_labels, labels.cpu().numpy())
 
             outputs = model(input_ids)
-
-            predictions = torch.argmax(outputs, dim=1)
+            probs = F.softmax(outputs, dim=1)
+            predictions = torch.argmax(probs, dim=1)
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
             # Add this near the beginning of your inference loop
