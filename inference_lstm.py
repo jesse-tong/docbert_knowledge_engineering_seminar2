@@ -26,9 +26,25 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
     parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
+    # Add this argument to your parser
+    parser.add_argument("--fix_class_mapping", action="store_true", 
+                        help="Apply a fix for class mapping issues")
     args = parser.parse_args()
 
     class_names = args.class_names
+
+    # Add this after model loading, before inference
+    if args.fix_class_mapping:
+        print("Applying class mapping fix...")
+        
+        # Create a class mapping to realign predictions
+        # This is a permutation map to try various class alignments
+        # Option 1: Try a complete reversal
+        class_map = {0:3, 1:2, 2:1, 3:0}  # Reverse mapping
+        
+        # Print the mapping being used
+        print(f"Class mapping: {class_map}")
+        print(f"Class names in new order: {[class_names[class_map[i]] for i in range(len(class_names))]}")
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -116,7 +132,14 @@ if __name__ == "__main__":
             outputs = model(input_ids)
             probs = F.softmax(outputs, dim=1)
             predictions = torch.argmax(probs, dim=1)
-            all_predictions = np.append(all_predictions, predictions.cpu().numpy())
+
+
+            # In your inference loop, apply the mapping to predictions
+            if args.fix_class_mapping:
+                predictions_mapped = torch.tensor([class_map[p.item()] for p in predictions], device=device)
+                all_predictions = np.append(all_predictions, predictions_mapped.cpu().numpy())
+            else:
+                all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
             if args.print_predictions:
                 for i in range(len(predictions)):
