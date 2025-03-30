@@ -180,7 +180,7 @@ def prepare_lstm_data(data_path, text_col='text', label_col='label',
     # Create tokenizer and fit on training data
     if tokenizer is None:
         tokenizer = LSTMTokenizer(max_vocab_size=max_vocab_size, max_seq_length=max_seq_length)
-    tokenizer.fit(train_texts)
+        tokenizer.fit(train_texts)
     
     # Create datasets
     train_dataset = LSTMDataset(train_texts, train_labels, tokenizer)
