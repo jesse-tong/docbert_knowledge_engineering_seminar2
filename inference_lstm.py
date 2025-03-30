@@ -44,7 +44,7 @@ if __name__ == "__main__":
                                   max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0)
     
     # Load model
-    model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=tokenizer.max_vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
