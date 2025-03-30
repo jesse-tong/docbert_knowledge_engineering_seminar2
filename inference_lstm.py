@@ -47,7 +47,7 @@ if __name__ == "__main__":
     model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
-                           num_layers=args.num_layers,
+                           n_layers=args.num_layers,
                            output_dim=args.num_classes)
     
     model_state = torch.load(args.model_path)
