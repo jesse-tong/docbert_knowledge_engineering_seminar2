@@ -34,14 +34,15 @@ if __name__ == "__main__":
     model_state = torch.load(args.model_path)
     
     tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
-    tokenizer.from_json(args.tokenizer_path)
+    #tokenizer.from_json(args.tokenizer_path)
 
-    from itertools import islice
-    print('Tokenizer vocab size: ', tokenizer.vocab_size)
-    print('Tokenizer max vocab size: ', tokenizer.max_vocab_size)
-    print('Tokenizer max seq length: ', tokenizer.max_seq_length)
-    print('Tokenizer 100 first word2idx: ', dict(islice(tokenizer.word2idx.items(), 100)))
-    print('Tokenizer 100 first idx2word: ', dict(islice(tokenizer.idx2word.items(), 100)))
+    # Load tokenizer
+    _, _, _, tokenizer = prepare_lstm_data("./train.csv",
+                                    text_col=args.text_column,
+                                    label_col=args.label_column,
+                                    batch_size=args.batch_size,
+                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, return_datasets=True, return_tokenizer=True)
+    tokenizer.save(args.tokenizer_path)
 
     # Prepare data
     _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
