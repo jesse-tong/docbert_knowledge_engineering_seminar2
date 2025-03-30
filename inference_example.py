@@ -94,7 +94,7 @@ if __name__ == "__main__":
             idx = int(i)
             f.write(f"Text: {test_data[0][idx]}\n")
             f.write(f"True Label: {all_labels[idx]}, Predicted Label: {all_predictions[idx]}\n")
-            f.write(f"Predicted Class: {class_names[all_predictions[idx]] if len(class_names) > all_predictions[idx] else "Unknown"}, True Class: {class_names[all_labels[idx]] if len(class_names) > all_predictions[idx] else "Unknown"}\n")
+            f.write(f"Predicted Class: {class_names[all_predictions[idx]] if len(class_names) > all_predictions[idx] else 'Unknown'}, True Class: {class_names[all_labels[idx]] if len(class_names) > all_labels[idx] else 'Unknown'}\n")
             f.write("-" * 50 + "\n")
 
     with open("metrics.txt", "w") as f:
