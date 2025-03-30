@@ -99,10 +99,17 @@ class LSTMDataset(Dataset):
             'attention_mask': encoding['attention_mask'],
             'label': torch.tensor(label, dtype=torch.long)
         }
+    
+    def get_text_(self, idx):
+        """Get original text for a given index"""
+        return {
+            'text': self.texts[idx],
+            'label': self.labels[idx]
+        }
 
 def prepare_lstm_data(data_path, text_col='text', label_col='label', 
                      max_vocab_size=30000, max_seq_length=512,
-                     val_split=0.1, test_split=0.1, batch_size=32, seed=42):
+                     val_split=0.1, test_split=0.1, batch_size=32, seed=42, return_datasets=False):
     """
     Load data and prepare for LSTM model
     """
@@ -154,10 +161,27 @@ def prepare_lstm_data(data_path, text_col='text', label_col='label',
     train_dataset = LSTMDataset(train_texts, train_labels, tokenizer)
     val_dataset = LSTMDataset(val_texts, val_labels, tokenizer)
     test_dataset = LSTMDataset(test_texts, test_labels, tokenizer)
+
+    if return_datasets:
+        return train_dataset, val_dataset, test_dataset, tokenizer.vocab_size
     
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    if len(train_dataset.texts) == 0:
+        logger.warning("Training dataset is empty. Please check your data.")
+        train_loader = None
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    
+    if len(val_dataset.texts) == 0:
+        logger.warning("Validation dataset is empty. Please check your data.")
+        val_loader = None
+    else:
+        val_loader = DataLoader(val_dataset, batch_size=batch_size)
+    
+    if len(test_dataset.texts) == 0:
+        logger.warning("Test dataset is empty. Please check your data.")
+        test_loader = None
+    else:
+        test_loader = DataLoader(test_dataset, batch_size=batch_size)
     
     return train_loader, val_loader, test_loader, tokenizer.vocab_size
