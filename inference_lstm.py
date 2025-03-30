@@ -98,7 +98,7 @@ if __name__ == "__main__":
             confidence = probs[i][pred_label].item()
             
             print(f"Example {i}:")
-            print(f"  Text: {text[:100]}...")
+            print(f"  Text: {text['text']}...")
             print(f"  True label index: {true_label}, Expected class: {class_names[true_label]}")
             print(f"  Predicted index: {pred_label}, Predicted class: {class_names[pred_label]}")
             print(f"  Confidence: {confidence:.2%}")
