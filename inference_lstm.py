@@ -51,6 +51,11 @@ if __name__ == "__main__":
                            output_dim=args.num_classes)
     
     model_state = torch.load(args.model_path)
+
+    if 'vocab_size' in model_state:
+        vocab_size = model_state['vocab_size']
+        tokenizer.vocab_size = vocab_size
+
     if 'model_state_dict' in model_state:
         model.load_state_dict(model_state['model_state_dict'])
     else:

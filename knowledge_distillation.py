@@ -164,7 +164,10 @@ class DistillationTrainer:
             if val_f1 > self.best_val_f1:
                 self.best_val_f1 = val_f1
                 self.best_model_state = self.student_model.state_dict().copy()
-                torch.save(self.student_model.state_dict(), save_path)
+                torch.save({
+                    'model_state_dict': self.student_model.state_dict(),
+                    'vocab_size': self.student_model.vocab_size,
+                }, save_path)
                 logger.info(f"New best model saved with validation F1: {val_f1:.4f}")
             
             logger.info(f"Epoch {epoch+1}/{epochs}: "
