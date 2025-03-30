@@ -41,13 +41,13 @@ if __name__ == "__main__":
                                     text_col=args.text_column,
                                     label_col=args.label_column,
                                     batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer)
+                                    max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer, return_datasets=True)
 
-    test_loader, _, _, vocab_size = prepare_lstm_data(args.data_path,
+    _, _, test_loader, vocab_size = prepare_lstm_data(args.data_path,
                                   text_col=args.text_column,
                                   label_col=args.label_column,
                                   batch_size=args.batch_size,
-                                  max_seq_length=args.max_seq_length, val_split=0.0, test_split=0.0, tokenizer=tokenizer)
+                                  max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer)
     
     # Load model
     model = DocumentBiLSTM(vocab_size=tokenizer.max_vocab_size,
