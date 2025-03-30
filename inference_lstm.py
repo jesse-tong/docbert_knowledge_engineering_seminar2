@@ -50,7 +50,7 @@ if __name__ == "__main__":
                                   max_seq_length=args.max_seq_length, val_split=0.0, test_split=1.0, tokenizer=tokenizer)
     
     # Load model
-    model = DocumentBiLSTM(vocab_size=tokenizer.max_vocab_size,
+    model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
@@ -78,6 +78,20 @@ if __name__ == "__main__":
 
             predictions = torch.argmax(outputs, dim=1)
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
+
+            # Add this near the beginning of your inference loop
+            if batch_count == 0:
+                # Examine first batch
+                input_ids_sample = input_ids[0].cpu().numpy()
+                print(f"Sample input_ids: {input_ids_sample[:10]}...")
+                
+                # Check raw model outputs
+                import torch.nn.functional as F
+                raw_probs = F.softmax(outputs, dim=1)
+                print(f"Raw prediction probabilities for first 3 examples:")
+                for i in range(min(3, len(input_ids))):
+                    probs = raw_probs[i].cpu().numpy()
+                    print(f"Example {i}: Class distributions: {probs}")
 
             if args.print_predictions:
                 for i in range(len(predictions)):
