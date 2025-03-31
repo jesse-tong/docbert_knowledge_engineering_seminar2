@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     # Load model
-    model = DocumentBiLSTM(vocab_size=test_dataset.tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=30000,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
