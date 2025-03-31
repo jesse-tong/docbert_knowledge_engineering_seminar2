@@ -63,9 +63,9 @@ if __name__ == "__main__":
                            output_dim=args.num_classes)
 
     if 'model_state_dict' in model_state:
-        model.load_state_dict(model_state['model_state_dict'])
+        model.load_state_dict(model_state['model_state_dict'], strict=False)
     else:
-        model.load_state_dict(model_state)
+        model.load_state_dict(model_state, strict=False)
 
     model = model.to(device)
 
