@@ -2,10 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 class DocumentBiLSTM(nn.Module):
     """
-    A simpler BiLSTM implementation that doesn't require pre-loaded embeddings
-    Good for getting started quickly
+    BiLSTM implementation with stability improvements inspired by DocBERT
     """
     def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, 
                  n_layers=2, dropout=0.5, pad_idx=0):
@@ -20,6 +23,9 @@ class DocumentBiLSTM(nn.Module):
                            dropout=dropout if n_layers > 1 else 0,
                            batch_first=True)
         
+        # Add layer normalization for stability (like in DocBERT)
+        self.layer_norm = nn.LayerNorm(hidden_dim * 2)
+        
         self.fc = nn.Linear(hidden_dim * 2, output_dim)
         
         self.dropout = nn.Dropout(dropout)
@@ -33,44 +39,46 @@ class DocumentBiLSTM(nn.Module):
         # Apply dropout to embeddings
         embedded = self.dropout(embedded)
         
+        # Initialize hidden and cell variables
+        hidden = None
+        cell = None
+        
         if attention_mask is not None:
             # Convert attention mask to sequence lengths
-            # First, get the length of each sequence by summing the attention mask
             seq_lengths = attention_mask.sum(dim=1).to(torch.int64).cpu()
             
-            # Sort sequences by decreasing length for pack_padded_sequence
+            # Sort sequences by decreasing length
             seq_lengths, indices = torch.sort(seq_lengths, descending=True)
-            embedded = embedded[indices]
+            sorted_embedded = embedded[indices]
             
             # Pack the embedded sequences
             packed_embedded = nn.utils.rnn.pack_padded_sequence(
-                embedded, seq_lengths, batch_first=True, enforce_sorted=True
+                sorted_embedded, seq_lengths, batch_first=True, enforce_sorted=True
             )
             
-            # Pass the packed sequence through LSTM
+            # Pass through LSTM
             packed_output, (hidden, cell) = self.lstm(packed_embedded)
             
             # Unpack the sequence
             output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
             
-            # Restore the original batch order
+            # Get the hidden states in correct order
             _, restore_indices = torch.sort(indices)
+            hidden = hidden[:, restore_indices]
         else:
             # Standard processing without masking
-            output, (hidden, cell) = self.lstm(embedded)
-            
-        # output = [batch size, seq len, hid dim * num directions]
-        # hidden = [n layers * num directions, batch size, hid dim]
-        # cell = [n layers * num directions, batch size, hid dim]
-        output, (hidden, cell) = self.lstm(embedded)
+            _, (hidden, cell) = self.lstm(embedded)
         
         # Concatenate the final forward and backward hidden states
-        hidden = torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1)
+        hidden_cat = torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1)
+        
+        # Apply layer normalization (improves stability)
+        normalized = self.layer_norm(hidden_cat)
         
         # Apply dropout to hidden state
-        hidden = self.dropout(hidden)
+        dropped = self.dropout(normalized)
             
         # prediction = [batch size, output dim]
-        prediction = self.fc(hidden)
+        prediction = self.fc(dropped)
         
         return prediction
