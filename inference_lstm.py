@@ -40,7 +40,7 @@ if __name__ == "__main__":
     model_state = torch.load(args.model_path)
 
     # Load data first
-    train_dataset, val_dataset, test_dataset = load_data(
+    train_data, val_data, test_data = load_data(
         args.data_path,
         text_col=args.text_column,
         label_col=args.label_column,
@@ -51,18 +51,20 @@ if __name__ == "__main__":
     
     # Create BERT data loaders
     print("Creating data loaders (note the datasets and dataloaders use BERT's tokenizer)...")
-    train_loader, val_loader, test_loader = create_data_loaders(
-        train_dataset, 
-        val_dataset, 
-        test_dataset,
+    train_dataset, val_dataset, test_dataset = create_data_loaders(
+        train_data, 
+        val_data, 
+        test_data,
         tokenizer_name=args.bert_model,
         max_length=args.max_seq_length,
         batch_size=args.batch_size,
-        num_classes=args.num_classes
+        num_classes=args.num_classes,
+        return_datasets=True
     )
 
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     # Load model
-    model = DocumentBiLSTM(vocab_size=test_loader.tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=test_dataset.tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,

@@ -124,7 +124,7 @@ def load_data(data_path, text_col='text', label_col='label', validation_split=0.
     return (train_texts, train_labels), (val_texts, val_labels), (test_texts, test_labels)
 
 def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-base-uncased', 
-                       max_length=512, batch_size=16, num_classes=None):
+                       max_length=512, batch_size=16, num_classes=None, return_datasets=False):
     """
     Create DataLoader objects for training, validation and testing
     """
@@ -137,6 +137,9 @@ def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-ba
     val_dataset = DocumentDataset(val_texts, val_labels, tokenizer_name, max_length, num_classes)
     test_dataset = DocumentDataset(test_texts, test_labels, tokenizer_name, max_length, num_classes)
     
+    if return_datasets:
+        return train_dataset, val_dataset, test_dataset
+
     # Create data loaders
     if len(train_dataset.texts) == 0:
         logger.warning("Training dataset is empty. Check your data loading and splitting.")

@@ -115,17 +115,23 @@ def main():
     
     # Create BERT data loaders
     logger.info("Creating BERT data loaders...")
-    bert_train_loader, bert_val_loader, bert_test_loader = create_data_loaders(
+    bert_train_dataset, bert_val_dataset, bert_test_dataset = create_data_loaders(
         train_data, 
         val_data, 
         test_data,
         tokenizer_name=args.bert_model,
         max_length=args.max_seq_length,
         batch_size=args.batch_size,
-        num_classes=args.num_classes
+        num_classes=args.num_classes,
+        return_datasets=True
     )
+
+    # Create dataloaders 
+    bert_train_loader = torch.utils.data.DataLoader(bert_train_dataset, batch_size=args.batch_size, shuffle=True)
+    bert_val_loader = torch.utils.data.DataLoader(bert_val_dataset, batch_size=args.batch_size)
+    bert_test_loader = torch.utils.data.DataLoader(bert_test_dataset, batch_size=args.batch_size)
     
-    vocab_size = bert_train_loader.tokenizer.vocab_size
+    vocab_size = bert_train_dataset.tokenizer.vocab_size
     
     logger.info(f"LSTM Vocabulary size: {vocab_size}")
     
