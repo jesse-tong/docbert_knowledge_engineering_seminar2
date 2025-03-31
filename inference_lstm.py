@@ -96,6 +96,11 @@ if __name__ == "__main__":
 
             batch_count += 1
 
+    print("Label distribution in test set:", np.bincount(all_labels))
+    print("Prediction distribution:", np.bincount(all_predictions))
+    print("Example predictions (first 10):", all_predictions[:10])
+    print("Example true labels (first 10):", all_labels[:10])
+
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
     accuracy = metrics.accuracy_score(all_labels, all_predictions)
