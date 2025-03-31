@@ -1,4 +1,4 @@
-from dataset_lstm import prepare_lstm_data, LSTMTokenizer, LSTMDataset
+from dataset import load_data, create_data_loaders
 from models.lstm_model import DocumentBiLSTM
 from sklearn import metrics
 import torch, random
@@ -14,6 +14,7 @@ import copy
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Document Classification with LSTM")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
+    parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="BERT model name or path used for distillation")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model")
     parser.add_argument("--tokenizer_path", type=str, required=True, help="Path to the tokenizer")
     parser.add_argument("--max_seq_length", type=int, default=512, help="Maximum sequence length for LSTM")
@@ -39,24 +40,31 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model_state = torch.load(args.model_path)
+
+    # Load data first
+    train_dataset, val_dataset, test_dataset = load_data(
+        args.data_path,
+        text_col=args.text_column,
+        label_col=args.label_column,
+        validation_split=0.0,
+        test_split=1.0,
+        seed=42
+    )
     
-    tokenizer = LSTMTokenizer(max_seq_length=args.max_seq_length)
-    tokenizer.from_json(args.tokenizer_path)
-
-    # Prepare data
-    _, _, test_dataset, vocab_size = prepare_lstm_data(args.data_path,
-                                    text_col=args.text_column,
-                                    label_col=args.label_column,
-                                    batch_size=args.batch_size,
-                                    max_seq_length=args.max_seq_length, 
-                                    val_split=0.0, test_split=1.0, 
-                                    tokenizer=tokenizer, return_datasets=True,
-                                    seed=random.randint(0, 10000))
-
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
+    # Create BERT data loaders
+    print("Creating data loaders (note the datasets and dataloaders use BERT's tokenizer)...")
+    train_loader, val_loader, test_loader = create_data_loaders(
+        train_dataset, 
+        val_dataset, 
+        test_dataset,
+        tokenizer_name=args.bert_model,
+        max_length=args.max_seq_length,
+        batch_size=args.batch_size,
+        num_classes=args.num_classes
+    )
 
     # Load model
-    model = DocumentBiLSTM(vocab_size=tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=train_dataset.tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,

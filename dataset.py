@@ -62,6 +62,12 @@ class DocumentDataset(Dataset):
             'label': torch.tensor(label, dtype=torch.long)
         }
 
+    def get_text_(self, idx):
+        """Get original text for a given index"""
+        return {
+            'text': self.texts[idx],
+            'label': self.labels[idx]
+        }
 def load_data(data_path, text_col='text', label_col='label', validation_split=0.1, test_split=0.1, seed=42):
     """
     Load data from CSV/TSV and split into train, validation and test sets

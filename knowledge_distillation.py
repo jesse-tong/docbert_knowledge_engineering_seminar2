@@ -24,6 +24,7 @@ class DistillationTrainer:
         lr=0.001,
         weight_decay=1e-5,
         max_grad_norm=1.0,
+        label_mapping=None,
         device=None
     ):
         self.teacher_model = teacher_model
@@ -63,6 +64,7 @@ class DistillationTrainer:
         # Tracking metrics
         self.best_val_f1 = 0.0
         self.best_model_state = None
+        self.label_mapping = label_mapping
     
     def distillation_loss(self, student_logits, teacher_logits, labels, temperature, alpha):
         """
@@ -166,7 +168,10 @@ class DistillationTrainer:
             if val_f1 > self.best_val_f1:
                 self.best_val_f1 = val_f1
                 self.best_model_state = self.student_model.state_dict().copy()
-                torch.save(self.student_model.state_dict(), save_path)
+                torch.save({
+                    'model_state_dict': self.student_model.state_dict(),
+                    'label_mapping': self.label_mapping,
+                }, save_path)
                 logger.info(f"New best model saved with validation F1: {val_f1:.4f}")
             
             logger.info(f"Epoch {epoch+1}/{epochs}: "
