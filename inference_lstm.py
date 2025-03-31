@@ -62,6 +62,7 @@ if __name__ == "__main__":
         return_datasets=True
     )
 
+    bert_vocab_size = train_dataset.tokenizer.vocab_size
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     # Load model
     model = DocumentBiLSTM(vocab_size=30000,
