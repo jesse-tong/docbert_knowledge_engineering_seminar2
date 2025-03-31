@@ -62,7 +62,7 @@ if __name__ == "__main__":
     )
 
     # Load model
-    model = DocumentBiLSTM(vocab_size=train_dataset.tokenizer.vocab_size,
+    model = DocumentBiLSTM(vocab_size=test_loader.tokenizer.vocab_size,
                            embedding_dim=args.embedding_dim,
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,

@@ -8,7 +8,6 @@ import numpy as np
 from model import DocBERT
 from models.lstm_model import DocumentBiLSTM
 from dataset import load_data, create_data_loaders
-from dataset_lstm import prepare_lstm_data
 from knowledge_distillation import DistillationTrainer
 from transformers import BertTokenizer
 
@@ -126,18 +125,7 @@ def main():
         num_classes=args.num_classes
     )
     
-    # Create LSTM data loaders
-    logger.info("Creating LSTM data loaders...")
-    lstm_train_loader, lstm_val_loader, lstm_test_loader, tokenizer = prepare_lstm_data(
-        args.data_path,
-        text_col=args.text_column,
-        label_col=args.label_column,
-        max_vocab_size=30000,
-        max_seq_length=args.max_seq_length,
-        batch_size=args.batch_size,
-        seed=args.seed, return_tokenizer=True
-    )
-    vocab_size = tokenizer.vocab_size
+    vocab_size = bert_train_loader.tokenizer.vocab_size
     
     logger.info(f"LSTM Vocabulary size: {vocab_size}")
     
@@ -188,10 +176,6 @@ def main():
     logger.info("Starting knowledge distillation...")
     save_path = os.path.join(args.output_dir, "distilled_lstm_model.pth")
     trainer.train(epochs=args.epochs, save_path=save_path)
-    
-    # Save the tokenizer
-    tokenizer_path = os.path.join(args.output_dir, "tokenizer.json")
-    tokenizer.save(tokenizer_path)
 
     logger.info("Knowledge distillation completed!")
 
