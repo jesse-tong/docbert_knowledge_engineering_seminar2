@@ -14,9 +14,8 @@ import copy
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Document Classification with LSTM")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
-    parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="BERT model name or path used for distillation")
+    parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="BERT model name or path used for distillation (as we'll use its tokenizer)")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model")
-    parser.add_argument("--tokenizer_path", type=str, required=True, help="Path to the tokenizer")
     parser.add_argument("--max_seq_length", type=int, default=512, help="Maximum sequence length for LSTM")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and evaluation")
     parser.add_argument("--num_classes", type=int, required=True, help="Number of classes for classification")
@@ -34,7 +33,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     class_names = args.class_names
-
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
