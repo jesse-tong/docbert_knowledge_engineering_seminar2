@@ -23,6 +23,7 @@ class DistillationTrainer:
         alpha=0.5,  # Weight for distillation loss vs. regular loss
         lr=0.001,
         weight_decay=1e-5,
+        max_grad_norm=1.0,
         device=None
     ):
         self.teacher_model = teacher_model
@@ -32,6 +33,7 @@ class DistillationTrainer:
         self.test_loader = test_loader
         self.temperature = temperature
         self.alpha = alpha
+        self.max_grad_norm = max_grad_norm
         
         self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"Using device: {self.device}")
@@ -137,7 +139,7 @@ class DistillationTrainer:
                 # Backward and optimize
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.student_model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(self.student_model.parameters(), self.max_grad_norm)
                 self.optimizer.step()
                 
                 train_loss += loss.item()
