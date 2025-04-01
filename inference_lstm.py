@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model_state = torch.load(args.model_path)
+    model_state = torch.load(args.model_path, map_location=device)
 
     # Load data first
     train_data, val_data, test_data = load_data(
