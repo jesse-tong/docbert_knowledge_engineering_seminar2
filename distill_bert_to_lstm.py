@@ -29,32 +29,7 @@ def set_seed(seed):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-def tokenize_for_lstm(texts, bert_tokenizer, max_seq_length=512):
-    """
-    Convert BERT tokenization format to format suitable for LSTM
-    This is a simple approach that just takes whole words from BERT tokenization
-    """
-    from collections import Counter
-    
-    # Create vocabulary from all texts
-    word_counts = Counter()
-    all_words = []
-    
-    for text in texts:
-        # Simple tokenization by splitting on whitespace
-        words = text.lower().split()
-        word_counts.update(words)
-        all_words.extend(words)
-    
-    # Create word->index mapping
-    word2idx = {'<pad>': 0, '<unk>': 1}
-    for idx, (word, _) in enumerate(word_counts.most_common(30000 - 2), 2):
-        word2idx[word] = idx
-    
-    vocab_size = len(word2idx)
-    logger.info(f"Created vocabulary with {vocab_size} tokens")
-    
-    return word2idx, vocab_size
+
 
 def main():
     parser = argparse.ArgumentParser(description="Distill knowledge from BERT to LSTM for document classification")
