@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     # I don't know why the model is trained with 30000 embedding size (maybe I forgot to update the distillation code before training)
     # so this is a temporary fix
-    if model_state['embedding.weight'].shape[0] == 30000:
+    if model_state['model_state_dict']['embedding.weight'].shape[0] == 30000:
         model = DocumentBiLSTM(vocab_size=30000,
                                  embedding_dim=args.embedding_dim,
                                  hidden_dim=args.hidden_dim,
