@@ -124,6 +124,9 @@ def main():
     )
 
     print("Train samples: ", len(bert_train_dataset))
+    print("Validation samples: ", len(bert_val_dataset))
+    print("Test samples: ", len(bert_test_dataset))
+    
     # Create dataloaders 
     bert_train_loader = torch.utils.data.DataLoader(bert_train_dataset, batch_size=args.batch_size, shuffle=True)
     bert_val_loader = torch.utils.data.DataLoader(bert_val_dataset, batch_size=args.batch_size)
