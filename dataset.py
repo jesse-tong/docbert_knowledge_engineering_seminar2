@@ -185,6 +185,13 @@ def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-ba
     train_texts, train_labels = train_data
     val_texts, val_labels = val_data
     test_texts, test_labels = test_data
+
+    print("First train text:", train_texts[0])
+    print("First train label:", train_labels[0])
+    print("First val text:", val_texts[0])
+    print("First val label:", val_labels[0])
+    print("First test text:", test_texts[0])
+    print("First test label:", test_labels[0])
     
     # Create datasets
     train_dataset = DocumentDataset(train_texts, train_labels, tokenizer_name, max_length, num_classes)
