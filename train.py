@@ -30,7 +30,9 @@ def main():
     parser = argparse.ArgumentParser(description="Train a document classification model with BERT")
     
     # Data arguments
-    parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset file (CSV or TSV)")
+    parser.add_argument("--train_data_path", type=str, required=True, help="Path to the dataset file (CSV or TSV)")
+    parser.add_argument("--val_data_path", type=str, required=True, help="Path to the validation dataset file (CSV or TSV)")
+    parser.add_argument("--test_data_path", type=str, required=True, help="Path to the test dataset file (CSV or TSV)")
     parser.add_argument("--text_column", type=str, default="text", help="Name of the text column")
     parser.add_argument("--label_column", type=str, nargs="+", help="Name of the label column")
     parser.add_argument("--val_split", type=float, default=0.1, help="Validation set split ratio")
@@ -71,12 +73,30 @@ def main():
     label_column = args.label_column[0] if isinstance(args.label_column, list) and len(args.label_column) == 1 else args.label_column
     # Load and prepare data
     logger.info("Loading and preparing data...")
-    train_data, val_data, test_data = load_data(
-        args.data_path,
+    train_data, _, _ = load_data(
+        args.train_data_path,
         text_col=args.text_column,
         label_col=label_column,
-        validation_split=args.val_split,
-        test_split=args.test_split,
+        validation_split=0.0,
+        test_split=0.0,
+        seed=args.seed
+    )
+
+    _, val_data, _ = load_data(
+        args.val_data_path,
+        text_col=args.text_column,
+        label_col=label_column,
+        validation_split=1.0,
+        test_split=0.0,
+        seed=args.seed
+    )
+
+    _, _, test_data = load_data(
+        args.test_data_path,
+        text_col=args.text_column,
+        label_col=label_column,
+        validation_split=0.0,
+        test_split=1.0,
         seed=args.seed
     )
 
