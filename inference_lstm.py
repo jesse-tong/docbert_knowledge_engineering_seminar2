@@ -94,17 +94,22 @@ if __name__ == "__main__":
 
             outputs = model(input_ids, attention_mask=attention_mask)
             probs = F.softmax(outputs, dim=1)
-            batch_size, total_classes = outputs.shape
-            if total_classes % num_categories != 0:
-                raise ValueError(f"Error: Number of total classes in the batch must of divisible by {num_categories}")
+            if num_categories > 1:
+                batch_size, total_classes = outputs.shape
+                if total_classes % num_categories != 0:
+                    raise ValueError(f"Error: Number of total classes in the batch must of divisible by {num_categories}")
 
-            classes_per_group = total_classes // num_categories
-            # Group every classes_per_group values along dim=1
-            reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+                classes_per_group = total_classes // num_categories
+                # Group every classes_per_group values along dim=1
+                reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
 
-            # Argmax over each group of classes_per_group
-            preds = reshaped.argmax(dim=-1)
-            predictions = torch.argmax(probs, dim=1)
+                # Argmax over each group of classes_per_group
+                preds = reshaped.argmax(dim=-1)
+                predictions = torch.argmax(probs, dim=1)
+            else:
+                predictions = torch.argmax(probs, dim=1)
+
+            print("DEBUG: Prediction shape: ", predictions.shape)
 
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
@@ -117,9 +122,12 @@ if __name__ == "__main__":
 
             batch_count += 1
 
-    # Flatten the predictions and labels
-    all_labels = all_labels.flatten()
-    all_predictions = all_predictions.flatten()
+    # Turn predictions and labels to 1D arrays
+    all_labels = all_labels.reshape(-1, 1)
+    all_labels = np.array([int(label) for label in all_labels])
+    all_predictions = all_predictions.reshape(-1, 1)
+    print("DEBUG: all_labels shape: ", all_labels.shape)
+    print("DEBUG: all_predictions shape: ", all_predictions.shape)
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
     accuracy = metrics.accuracy_score(all_labels, all_predictions)
