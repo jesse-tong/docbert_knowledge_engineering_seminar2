@@ -2,7 +2,7 @@ scikit-learn
 numpy
 pandas
 torch
-transformers>=4.28.0
+transformers
 tokenizers
 datasets
 torchtext
