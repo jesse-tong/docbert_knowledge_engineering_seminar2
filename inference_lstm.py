@@ -117,6 +117,9 @@ if __name__ == "__main__":
 
             batch_count += 1
 
+    # Flatten the predictions and labels
+    all_labels = all_labels.flatten()
+    all_predictions = all_predictions.flatten()
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
     accuracy = metrics.accuracy_score(all_labels, all_predictions)
