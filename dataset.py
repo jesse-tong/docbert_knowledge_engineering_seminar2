@@ -17,6 +17,9 @@ class DocumentDataset(Dataset):
         self.labels = labels
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
+
+        print(f"DEBUG: DocumentDataset init - received labels shape: {labels.shape}")
+        print(f"DEBUG: DocumentDataset init - num_classes: {self.num_classes}")
         
         if type(labels) is not np.ndarray or type(labels) is not list:
             # Validate labels
@@ -67,7 +70,7 @@ class DocumentDataset(Dataset):
     def __getitem__(self, idx):
         text = str(self.texts[idx])
         label = self.labels[idx]
-
+        print(f"DEBUG: DocumentDataset getitem - label shape BEFORE tensor conversion: {label.shape}")
         # Tokenize the text with attention mask and truncation
         encoding = self.tokenizer.encode_plus(
             text,
@@ -174,6 +177,10 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
     # Log stats about the dataset
     logger.info(f"Dataset splits: train={train_size}, val={val_size}, test={test_size}")
     logger.info(f"Label distribution in train set: {np.bincount(train_labels)}")
+    print(f"DEBUG: Labels shape AFTER load_data - Train: {train_labels.shape}")
+    print(f"DEBUG: Labels shape AFTER load_data - Val: {val_labels.shape}")
+    print(f"DEBUG: Labels shape AFTER load_data - Test: {test_labels.shape}")
+    # Also print the num_categories being passed
     
     return (train_texts, train_labels), (val_texts, val_labels), (test_texts, test_labels)
 
