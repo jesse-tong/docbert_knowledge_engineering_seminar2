@@ -1,6 +1,5 @@
-```
-SPDX-License-Identifier: AGPL-3.0-or-later
-```
+AGPL-3.0
+
 This repository as a whole is licensed under the [GNU Affero General Public License v3.0 or any later version (AGPL v3.0 or later)](https://www.gnu.org/licenses/agpl-3.0.en.html).
 
 ## Third-Party Components
