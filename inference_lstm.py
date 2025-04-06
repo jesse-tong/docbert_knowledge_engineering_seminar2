@@ -104,14 +104,11 @@ if __name__ == "__main__":
                 reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, num_categories, classes_per_group)
                 probs = F.softmax(reshaped, dim=1)
                 # Argmax over each group of classes_per_group
-                print("DEBUG: Reshaped shape: ", reshaped.shape)
 
                 predictions = torch.argmax(probs, dim=-1)
             else:
                 probs = F.softmax(outputs, dim=1)
                 predictions = torch.argmax(probs, dim=1)
-
-            print("DEBUG: Prediction shape: ", predictions.shape)
 
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
@@ -128,8 +125,7 @@ if __name__ == "__main__":
     all_labels = all_labels.reshape(-1, 1)
     all_labels = np.array([int(label) for label in all_labels])
     all_predictions = all_predictions.reshape(-1, 1)
-    print("DEBUG: all_labels shape: ", all_labels.shape)
-    print("DEBUG: all_predictions shape: ", all_predictions.shape)
+
     # Print classification report
     # Calculate accuracy, F1 score, recall, and precision
     accuracy = metrics.accuracy_score(all_labels, all_predictions)
@@ -145,7 +141,7 @@ if __name__ == "__main__":
     with open("predictions_lstm.txt", "w") as f:
         for i in range(len(all_labels)):
             idx = int(i)
-            f.write(f"Text: {test_dataset.get_text_(idx)}\n")
+            f.write(f"Text: {test_dataset.get_text_(idx // 5)}\n")
             f.write(f"True Label: {all_labels[idx]}, Predicted Label: {all_predictions[idx]}\n")
             f.write("\n")
 
