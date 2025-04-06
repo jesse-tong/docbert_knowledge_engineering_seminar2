@@ -17,5 +17,5 @@ python ./distill_bert_to_lstm.py --bert_model "vinai/phobert-base-v2" --bert_mod
 
 - Inference with distilled LSTM model (test_data.csv is test dataset with 4 classes like ag_news)
 ```
-python ./inference_lstm.py --model_path "./output/distilled_lstm_model.pth" --bert-tokenizer "vinai/phobert-base-v2" --num_classes 4  --label_column "individual" "groups" "religion/creed" "race/ethnicity" "politics" --text_column "content" --data_path "./datasets/test.csv" --inference_batch_limit 10
+python ./inference_lstm.py --model_path "./output/distilled_lstm_model.pth" --bert_tokenizer "vinai/phobert-base-v2" --num_classes 4  --label_column "individual" "groups" "religion/creed" "race/ethnicity" "politics" --text_column "content" --data_path "./datasets/test.csv" --inference_batch_limit 10
 ```
