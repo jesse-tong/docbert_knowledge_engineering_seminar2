@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
     parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="Pre-trained BERT model name")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model")
-    parser.add_argument("--max_seq_length", type=int, default=512, help="Maximum sequence length for BERT")
+    parser.add_argument("--max_seq_length", type=int, default=250, help="Maximum sequence length for BERT (e.g., 250 for PhoBERT as PhoBERT allows max_position_embeddings=258)")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and evaluation")
     parser.add_argument("--num_classes", type=int, required=True, help="Number of classes for classification")
     parser.add_argument("--text_column", type=str, default="text", help="Column name for text data")

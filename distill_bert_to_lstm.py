@@ -44,7 +44,7 @@ def main():
     # BERT model arguments
     parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="BERT model to use")
     parser.add_argument("--bert_model_path", type=str, required=True, help="Path to saved BERT model weights")
-    parser.add_argument("--max_seq_length", type=int, default=512, help="Maximum sequence length")
+    parser.add_argument("--max_seq_length", type=int, default=250, help="Maximum sequence length (e.g., 250 for PhoBERT as PhoBERT allows max_position_embeddings=258)")
     
     # LSTM model arguments
     parser.add_argument("--embedding_dim", type=int, default=300, help="Dimension of word embeddings in LSTM")

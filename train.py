@@ -40,7 +40,7 @@ def main():
     parser.add_argument("--bert_model", type=str, default="bert-base-uncased", 
                         help="BERT model to use (e.g., bert-base-uncased, bert-large-uncased)")
     parser.add_argument("--num_classes", type=int, required=True, help="Number of classes to predict")
-    parser.add_argument("--max_length", type=int, default=512, help="Maximum sequence length")
+    parser.add_argument("--max_length", type=int, default=250, help="Maximum sequence length (PhoBERT has 258 max_position_embeddings so we choose 250)")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout probability")
     
     # Training arguments
