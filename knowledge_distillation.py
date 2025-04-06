@@ -91,7 +91,23 @@ class DistillationTrainer:
         distill_loss = F.kl_div(soft_prob, soft_targets, reduction='batchmean') * (temperature ** 2)
         
         # Standard cross entropy with hard targets
-        ce_loss = self.ce_loss(student_logits, labels)
+        if self.num_categories > 1:
+            total_loss = 0
+            for i in range(self.num_categories):
+                start_idx = i * self.num_classes
+                end_idx = (i + 1) * self.num_classes
+                category_outputs = student_logits[:, start_idx:end_idx] # Shape (batch, num_classes)
+                category_labels = labels[:, i] # Shape (batch)
+                
+                # Ensure category_labels are in [0, self.num_classes - 1]
+                if category_labels.max() >= self.num_classes or category_labels.min() < 0:
+                    print(f"ERROR: Category {i} labels out of range [0, {self.num_classes - 1}]: min={category_labels.min()}, max={category_labels.max()}")
+                    
+                total_loss += self.criterion(category_outputs, category_labels)
+
+            ce_loss = total_loss / self.num_categories # Average loss
+        else:
+            ce_loss = self.ce_loss(student_logits, labels)
         
         # Weighted combination of the two losses
         loss = alpha * distill_loss + (1 - alpha) * ce_loss
@@ -228,7 +244,23 @@ class DistillationTrainer:
                 )
                 
                 # Calculate regular CE loss (no distillation during evaluation)
-                loss = self.ce_loss(student_logits, labels)
+                if self.num_categories > 1:
+                    total_loss = 0
+                    for i in range(self.num_categories):
+                        start_idx = i * self.num_classes
+                        end_idx = (i + 1) * self.num_classes
+                        category_outputs = student_logits[:, start_idx:end_idx] # Shape (batch, num_classes)
+                        category_labels = labels[:, i] # Shape (batch)
+                        
+                        # Ensure category_labels are in [0, self.num_classes - 1]
+                        if category_labels.max() >= self.num_classes or category_labels.min() < 0:
+                            print(f"ERROR: Category {i} labels out of range [0, {self.num_classes - 1}]: min={category_labels.min()}, max={category_labels.max()}")
+                            
+                        total_loss += self.criterion(category_outputs, category_labels)
+
+                    loss = total_loss / self.num_categories # Average loss
+                else:
+                    loss = self.ce_loss(student_logits, labels)
                 eval_loss += loss.item()
                 
                 # Get predictions
