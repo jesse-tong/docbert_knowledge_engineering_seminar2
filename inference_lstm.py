@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 # Argmax over each group of classes_per_group
                 print("DEBUG: Reshaped shape: ", reshaped.shape)
 
-                predictions = torch.argmax(probs, dim=1)
+                predictions = torch.argmax(probs, dim=-1)
             else:
                 probs = F.softmax(outputs, dim=1)
                 predictions = torch.argmax(probs, dim=1)
