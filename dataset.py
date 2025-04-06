@@ -15,6 +15,7 @@ class DocumentDataset(Dataset):
     def __init__(self, texts, labels, tokenizer_name='bert-base-uncased', max_length=512, num_classes=None):
         self.texts = texts
         self.labels = labels
+        self.num_classes = num_classes
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
 
