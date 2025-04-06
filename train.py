@@ -146,7 +146,7 @@ def main():
     
     # Train the model
     logger.info("Starting training...")
-    save_path = os.path.join(args.output_dir, args.bert_model.replace("/", "_") + "_finetuned")
+    save_path = os.path.join(args.output_dir, args.bert_model.replace("/", "_") + "_finetuned.pth")
     trainer.train(epochs=args.epochs, save_path=save_path)
     
     logger.info("Training completed!")
