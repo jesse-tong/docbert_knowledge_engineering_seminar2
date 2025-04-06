@@ -185,7 +185,6 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
     
     # Log stats about the dataset
     logger.info(f"Dataset splits: train={train_size}, val={val_size}, test={test_size}")
-    logger.info(f"Label distribution in train set: {np.bincount(train_labels)}")
     print(f"DEBUG: Labels shape AFTER load_data - Train: {train_labels.shape}")
     print(f"DEBUG: Labels shape AFTER load_data - Val: {val_labels.shape}")
     print(f"DEBUG: Labels shape AFTER load_data - Test: {test_labels.shape}")
