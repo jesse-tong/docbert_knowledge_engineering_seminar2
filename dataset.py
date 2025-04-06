@@ -22,7 +22,7 @@ class DocumentDataset(Dataset):
         print(f"DEBUG: DocumentDataset init - received labels shape: {labels.shape}")
         print(f"DEBUG: DocumentDataset init - num_classes: {self.num_classes}")
         
-        if type(labels) is not np.ndarray or type(labels) is not list:
+        if type(labels) is not np.ndarray and type(labels) is not list:
             # Validate labels
             unique_labels = set(labels)
             min_label = min(unique_labels) if unique_labels else 0
