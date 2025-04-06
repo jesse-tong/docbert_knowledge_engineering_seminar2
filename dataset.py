@@ -129,14 +129,22 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
                 
                 # Log the mapping for reference
                 logger.info(f"Label mapping for column '{label}': {label_map}")
-            else:
+            else: # Column is already numeric
+                current_col_labels = df[label].values # Get current column's data
                 # Check if labels start from 0
-                labels = df[label].values
-                min_label = labels.min()
+                min_label = current_col_labels.min()
                 if min_label != 0:
-                    logger.warning(f"Labels don't start from 0 (min={min_label}). Converting to zero-indexed...")
-                    label_map = {label: idx for idx, label in enumerate(sorted(set(labels)))}
-                    labels = np.array([label_map[label] for label in labels])
+                    logger.warning(f"Labels in numeric column '{label}' don't start from 0 (min={min_label}). Converting to zero-indexed...")
+                    label_map = {lbl: idx for idx, lbl in enumerate(sorted(set(current_col_labels)))}
+                    current_col_labels = np.array([label_map[lbl] for lbl in current_col_labels]) # Apply mapping to current column data
+
+                # Concatenate this column to the main 'labels' array
+                if labels is None:
+                    # This is the first column encountered (and it's numeric)
+                    labels = current_col_labels.reshape(-1, 1)
+                else:
+                    # Append this numeric column to existing labels
+                    labels = np.concatenate((labels, current_col_labels.reshape(-1, 1)), axis=1)
     else: # In case there is only one label column
         # Convert labels to numeric if they aren't already
         if not np.issubdtype(df[label_col].dtype, np.number):
