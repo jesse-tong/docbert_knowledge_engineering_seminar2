@@ -25,6 +25,7 @@ class DistillationTrainer:
         weight_decay=1e-5,
         max_grad_norm=1.0,
         label_mapping=None,
+        num_categories=1,
         device=None
     ):
         self.teacher_model = teacher_model
@@ -35,6 +36,7 @@ class DistillationTrainer:
         self.temperature = temperature
         self.alpha = alpha
         self.max_grad_norm = max_grad_norm
+        self.num_categories = num_categories
         
         self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"Using device: {self.device}")
@@ -65,6 +67,7 @@ class DistillationTrainer:
         self.best_val_f1 = 0.0
         self.best_model_state = None
         self.label_mapping = label_mapping
+
     
     def distillation_loss(self, student_logits, teacher_logits, labels, temperature, alpha):
         """
@@ -147,7 +150,19 @@ class DistillationTrainer:
                 train_loss += loss.item()
                 
                 # Calculate accuracy for progress tracking
-                _, preds = torch.max(student_logits, 1)
+                if self.num_categories > 1:
+                    batch_size, total_classes = student_logits.shape
+                    if total_classes % self.num_categories != 0:
+                        raise ValueError(f"Error: Number of total classes in the batch must of divisible by {self.num_categories}")
+
+                    classes_per_group = total_classes // self.num_categories
+                    # Group every classes_per_group values along dim=1
+                    reshaped = student_logits.view(student_logits.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+
+                    # Argmax over each group of classes_per_group
+                    preds = reshaped.argmax(dim=-1)
+                else:
+                    _, preds = torch.max(student_logits, 1)
                 all_preds.extend(preds.cpu().tolist())
                 all_labels.extend(labels.cpu().tolist())
                 
@@ -217,7 +232,19 @@ class DistillationTrainer:
                 eval_loss += loss.item()
                 
                 # Get predictions
-                _, preds = torch.max(student_logits, 1)
+                if self.num_categories > 1:
+                    batch_size, total_classes = student_logits.shape
+                    if total_classes % self.num_categories != 0:
+                        raise ValueError(f"Error: Number of total classes in the batch must of divisible by {self.num_categories}")
+
+                    classes_per_group = total_classes // self.num_categories
+                    # Group every classes_per_group values along dim=1
+                    reshaped = student_logits.view(student_logits.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+
+                    # Argmax over each group of classes_per_group
+                    preds = reshaped.argmax(dim=-1)
+                else:
+                    _, preds = torch.max(student_logits, 1)
                 all_preds.extend(preds.cpu().tolist())
                 all_labels.extend(labels.cpu().tolist())
         

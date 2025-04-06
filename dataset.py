@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import BertTokenizer
+from transformers import BertTokenizer, AutoTokenizer
 import pandas as pd
 import numpy as np
 import logging
@@ -15,26 +15,51 @@ class DocumentDataset(Dataset):
     def __init__(self, texts, labels, tokenizer_name='bert-base-uncased', max_length=512, num_classes=None):
         self.texts = texts
         self.labels = labels
-        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
         
-        # Validate labels
-        unique_labels = set(labels)
-        min_label = min(unique_labels) if unique_labels else 0
-        max_label = max(unique_labels) if unique_labels else 0
-        
-        # Log warning if labels might be out of range
-        if num_classes is not None and (min_label < 0 or max_label >= num_classes):
-            logger.warning(f"LABEL RANGE ERROR: Labels must be between 0 and {num_classes-1}, "
-                          f"but found range [{min_label}, {max_label}]")
-            logger.warning(f"Unique label values: {sorted(unique_labels)}")
+        if type(labels) is not np.ndarray or type(labels) is not list:
+            # Validate labels
+            unique_labels = set(labels)
+            min_label = min(unique_labels) if unique_labels else 0
+            max_label = max(unique_labels) if unique_labels else 0
             
-            # Fix labels by remapping them to start from 0 (some datasets might have labels starting from 1)
-            if min_label != 0:
-                logger.warning(f"Auto-correcting labels to be zero-indexed...")
-                label_map = {original: idx for idx, original in enumerate(sorted(unique_labels))}
-                self.labels = np.array([label_map[label] for label in labels])
-                logger.warning(f"New unique label values: {sorted(set(self.labels))}")
+            # Log warning if labels might be out of range
+            if num_classes is not None and (min_label < 0 or max_label >= num_classes):
+                logger.warning(f"Label Range Error: Labels must be between 0 and {num_classes-1}, "
+                            f"but found range [{min_label}, {max_label}]")
+                logger.warning(f"Unique label values: {sorted(unique_labels)}")
+                
+                # Fix labels by remapping them to start from 0 (some datasets might have labels starting from 1)
+                if min_label != 0:
+                    logger.warning(f"Auto-correcting labels to be zero-indexed...")
+                    label_map = {original: idx for idx, original in enumerate(sorted(unique_labels))}
+                    self.labels = np.array([label_map[label] for label in labels])
+                    logger.warning(f"New unique label values: {sorted(set(self.labels))}")
+
+        else:
+            # If labels is a list or numpy array, there are multiple label columns
+            # Validate each label column
+            labels = np.array(labels)
+            for i in range(labels.shape[1]):
+                unique_labels = set(labels[:, i])
+                min_label = min(unique_labels) if unique_labels else 0
+                max_label = max(unique_labels) if unique_labels else 0
+                
+                # Log warning if labels might be out of range
+                if num_classes is not None and (min_label < 0 or max_label >= num_classes):
+                    logger.warning(f"Label Range Error: Labels must be between 0 and {num_classes-1}, "
+                                f"but found range [{min_label}, {max_label}]")
+                    logger.warning(f"Unique label values: {sorted(unique_labels)}")
+                    
+                    # Fix labels by remapping them to start from 0
+                    if min_label != 0:
+                        logger.warning(f"Auto-correcting labels to be zero-indexed...")
+                        label_map = {original: idx for idx, original in enumerate(sorted(unique_labels))}
+                        labels[:, i] = np.array([label_map[label] for label in labels[:, i]])
+                        logger.warning(f"New unique label values: {sorted(set(labels[:, i]))}")
+
+            self.labels = labels
 
     def __len__(self):
         return len(self.texts)
@@ -68,7 +93,8 @@ class DocumentDataset(Dataset):
             'text': self.texts[idx],
             'label': self.labels[idx]
         }
-def load_data(data_path, text_col='text', label_col='label', validation_split=0.1, test_split=0.1, seed=42):
+    
+def load_data(data_path, text_col='text', label_col: str | list ='label', validation_split=0.1, test_split=0.1, seed=42):
     """
     Load data from CSV/TSV and split into train, validation and test sets
     """
@@ -80,23 +106,51 @@ def load_data(data_path, text_col='text', label_col='label', validation_split=0.
     else:
         raise ValueError("Unsupported file format. Please provide CSV or TSV file.")
     
-    # Convert labels to numeric if they aren't already
-    if not np.issubdtype(df[label_col].dtype, np.number):
-        label_map = {label: idx for idx, label in enumerate(sorted(df[label_col].unique()))}
-        df['label_numeric'] = df[label_col].map(label_map)
-        labels = df['label_numeric'].values
-        
-        # Log the mapping for reference
-        logger.info(f"Label mapping: {label_map}")
-    else:
-        labels = df[label_col].values
-        
-        # Check if labels start from 0
-        min_label = labels.min()
-        if min_label != 0:
-            logger.warning(f"Labels don't start from 0 (min={min_label}). Converting to zero-indexed...")
-            label_map = {label: idx for idx, label in enumerate(sorted(set(labels)))}
-            labels = np.array([label_map[label] for label in labels])
+    # If label_col is a list of columns, do the below but for each column
+    if isinstance(label_col, list):
+        labels = None
+        for idx, label in enumerate(label_col):
+            if label not in df.columns:
+                raise ValueError(f"Label column '{label}' not found in the dataset.")
+            
+            # Convert labels to numeric if they aren't already
+            if not np.issubdtype(df[label].dtype, np.number):
+                label_map = {label: idx for idx, label in enumerate(sorted(df[label].unique()))}
+                df[f'label_numeric_{idx}'] = df[label].map(label_map)
+                if labels is None:
+                    labels = df[f'label_numeric_{idx}'].values
+                else:
+                    # Extend the labels array to dim 1
+                    labels = np.column_stack((labels, df[f'label_numeric_{idx}'].values))
+                
+                # Log the mapping for reference
+                logger.info(f"Label mapping for column '{label}': {label_map}")
+            else:
+                # Check if labels start from 0
+                labels = df[label].values
+                min_label = labels.min()
+                if min_label != 0:
+                    logger.warning(f"Labels don't start from 0 (min={min_label}). Converting to zero-indexed...")
+                    label_map = {label: idx for idx, label in enumerate(sorted(set(labels)))}
+                    labels = np.array([label_map[label] for label in labels])
+    else: # In case there is only one label column
+        # Convert labels to numeric if they aren't already
+        if not np.issubdtype(df[label_col].dtype, np.number):
+            label_map = {label: idx for idx, label in enumerate(sorted(df[label_col].unique()))}
+            df['label_numeric'] = df[label_col].map(label_map)
+            labels = df['label_numeric'].values
+            
+            # Log the mapping for reference
+            logger.info(f"Label mapping: {label_map}")
+        else:
+            labels = df[label_col].values
+            
+            # Check if labels start from 0
+            min_label = labels.min()
+            if min_label != 0:
+                logger.warning(f"Labels don't start from 0 (min={min_label}). Converting to zero-indexed...")
+                label_map = {label: idx for idx, label in enumerate(sorted(set(labels)))}
+                labels = np.array([label_map[label] for label in labels])
     
     # Create a DataFrame with text and numeric labels
     texts = df[text_col].values

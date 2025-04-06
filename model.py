@@ -1,25 +1,27 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, BertConfig
+from transformers import AutoConfig, AutoModel
 
 class DocBERT(nn.Module):
     """
     Document classification using BERT with improved architecture
     based on Hedwig implementation patterns.
     """
-    def __init__(self, num_classes, bert_model_name='bert-base-uncased', dropout_prob=0.1):
+    def __init__(self, num_classes, bert_model_name='bert-base-uncased', dropout_prob=0.1, num_categories=1):
         super(DocBERT, self).__init__()
         
         # Load pre-trained BERT model or config
-        self.bert = BertModel.from_pretrained(bert_model_name)
-        self.config = self.bert.config
+   
+        self.bert = AutoModel.from_pretrained(bert_model_name)
+        self.config = AutoConfig.from_pretrained(bert_model_name)
         
         # Dropout layer for regularization (helps prevent overfitting)
         self.dropout = nn.Dropout(dropout_prob)
         
         # Multiple classification heads approach (inspired by Hedwig)
         self.hidden_size = self.config.hidden_size
-        self.classifier = nn.Linear(self.hidden_size, num_classes)
+        self.num_categories = num_categories
+        self.classifier = nn.Linear(self.hidden_size, num_classes*num_categories)
         
         # Layer normalization before classification (helps stabilize training)
         self.layer_norm = nn.LayerNorm(self.hidden_size)

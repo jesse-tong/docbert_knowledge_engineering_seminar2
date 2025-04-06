@@ -15,8 +15,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and evaluation")
     parser.add_argument("--num_classes", type=int, required=True, help="Number of classes for classification")
     parser.add_argument("--text_column", type=str, default="text", help="Column name for text data")
-    parser.add_argument("--label_column", type=str, default="label", help="Column name for labels")
-    parser.add_argument("--class_names", type=str, nargs='+', required=True, help="List of class names for classification")
+    parser.add_argument("--label_column", type=str, nargs="+", help="Column name for labels")
+    parser.add_argument("--class_names", type=str, nargs='+', required=False, help="List of class names for classification")
     parser.add_argument("--inference_batch_limit", type=int, default=-1, help="Limit for inference batch counts")
     parser.add_argument("--print_predictions", type=bool, default=False, help="Print predictions to console")
     args = parser.parse_args()
@@ -25,9 +25,13 @@ if __name__ == "__main__":
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Load data first
+    label_column = args.label_column[0] if isinstance(args.label_column, list) and len(args.label_column) == 1 else args.label_column
+    num_categories = len(args.label_column) if isinstance(args.label_column, list) else 1
     train_data, val_data, test_data = load_data(args.data_path, 
                                                 text_col=args.text_column, 
-                                                label_col=args.label_column,
+                                                label_col=label_column,
                                                 validation_split=0.0,
                                                 test_split=1.0)
     train_loader, val_loader, test_loader = create_data_loaders(train_data=train_data, 
@@ -35,9 +39,10 @@ if __name__ == "__main__":
                                                                 test_data=test_data, 
                                                                 tokenizer_name=args.bert_model,
                                                                 batch_size=args.batch_size, 
-                                                                max_length=args.max_seq_length)
+                                                                max_length=args.max_seq_length,
+                                                                num_classes=args.num_classes)
     
-    model = DocBERT(bert_model_name=args.bert_model, num_classes=args.num_classes)
+    model = DocBERT(bert_model_name=args.bert_model, num_classes=args.num_classes, num_categories=num_categories)
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     model = model.to(device)
 
@@ -62,7 +67,20 @@ if __name__ == "__main__":
         with torch.no_grad():
             outputs = model(input_ids, attention_mask=attention_mask)
             logits = outputs
-            predictions = torch.argmax(logits, dim=-1)
+            if num_categories > 1:
+                batch_size, total_classes = outputs.shape
+                if total_classes % num_categories != 0:
+                    raise ValueError(f"Error: Number of total classes in the batch must of divisible by {num_categories}")
+
+                classes_per_group = total_classes // num_categories
+                # Group every classes_per_group values along dim=1
+                reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+
+                # Argmax over each group of classes_per_group
+                predictions = reshaped.argmax(dim=-1)
+            else:
+                predictions = torch.argmax(logits, dim=-1)
+
             all_predictions = np.append(all_predictions, predictions.cpu().numpy())
 
         if args.print_predictions:
@@ -94,7 +112,6 @@ if __name__ == "__main__":
             idx = int(i)
             f.write(f"Text: {test_data[0][idx]}\n")
             f.write(f"True Label: {all_labels[idx]}, Predicted Label: {all_predictions[idx]}\n")
-            f.write(f"Predicted Class: {class_names[all_predictions[idx]] if len(class_names) > all_predictions[idx] else 'Unknown'}, True Class: {class_names[all_labels[idx]] if len(class_names) > all_labels[idx] else 'Unknown'}\n")
             f.write("-" * 50 + "\n")
 
     with open("metrics.txt", "w") as f:

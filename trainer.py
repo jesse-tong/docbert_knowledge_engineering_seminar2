@@ -28,6 +28,7 @@ class Trainer:
         warmup_proportion=0.1,
         gradient_accumulation_steps=1,
         max_grad_norm=1.0,
+        num_categories=1,
         device=None
     ):
         self.model = model
@@ -68,6 +69,9 @@ class Trainer:
         # For tracking metrics
         self.best_val_f1 = 0.0
         self.best_model_state = None
+
+        # For training if using multiple categories (e.g., multiple sentiment classes, there can be multiple sentiment in one document)
+        self.num_categories = num_categories
     
     def train(self, epochs, save_path='best_model.pth'):
         """
@@ -75,84 +79,106 @@ class Trainer:
         """
         logger.info(f"Starting training for {epochs} epochs")
         
-        for epoch in range(epochs):
-            start_time = time.time()
-            
-            # Training phase
-            self.model.train()
-            train_loss = 0
-            all_predictions = []
-            all_labels = []
-            
-            # Progress bar for training
-            train_iterator = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
-            for i, batch in enumerate(train_iterator):
-                # Move batch to device
-                input_ids = batch['input_ids'].to(self.device)
-                attention_mask = batch['attention_mask'].to(self.device)
-                token_type_ids = batch['token_type_ids'].to(self.device)
-                labels = batch['label'].to(self.device)
+        try:
+            for epoch in range(epochs):
+                start_time = time.time()
                 
-                # Forward pass
-                outputs = self.model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    token_type_ids=token_type_ids
-                )
+                # Training phase
+                self.model.train()
+                train_loss = 0
+                all_predictions = []
+                all_labels = []
                 
-                # Calculate loss
-                loss = self.criterion(outputs, labels)
-                
-                # Scale loss if using gradient accumulation
-                if self.gradient_accumulation_steps > 1:
-                    loss = loss / self.gradient_accumulation_steps
-                
-                # Backward pass
-                loss.backward()
-                
-                # Update weights if we've accumulated enough gradients
-                if (i + 1) % self.gradient_accumulation_steps == 0:
-                    # Gradient clipping to prevent exploding gradients
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                # Progress bar for training
+                train_iterator = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
+                for i, batch in enumerate(train_iterator):
+                    # Move batch to device
+                    input_ids = batch['input_ids'].to(self.device)
+                    attention_mask = batch['attention_mask'].to(self.device)
+                    token_type_ids = batch['token_type_ids'].to(self.device)
+                    labels = batch['label'].to(self.device)
                     
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                    # Forward pass
+                    outputs = self.model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        token_type_ids=token_type_ids
+                    )
+                    
+                    # Calculate loss
+                    loss = self.criterion(outputs, labels)
+                    
+                    # Scale loss if using gradient accumulation
+                    if self.gradient_accumulation_steps > 1:
+                        loss = loss / self.gradient_accumulation_steps
+                    
+                    # Backward pass
+                    loss.backward()
+                    
+                    # Update weights if we've accumulated enough gradients
+                    if (i + 1) % self.gradient_accumulation_steps == 0:
+                        # Gradient clipping to prevent exploding gradients
+                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                        
+                        self.optimizer.step()
+                        self.optimizer.zero_grad()
+                    
+                    train_loss += loss.item() * self.gradient_accumulation_steps
+                    
+                    # Get predictions for metrics
+                    if self.num_categories > 1:
+                        batch_size, total_classes = outputs.shape
+                        if total_classes % self.num_categories != 0:
+                            raise ValueError(f"Error: Number of total classes in the batch must of divisible by {self.num_categories}")
+
+                        classes_per_group = total_classes // self.num_categories
+                        # Group every classes_per_group values along dim=1
+                        reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+
+                        # Argmax over each group of classes_per_group
+                        preds = reshaped.argmax(dim=-1)
+                    else:
+                        _, preds = torch.max(outputs, dim=1)
+
+                    all_predictions.extend(preds.cpu().tolist())
+                    all_labels.extend(labels.cpu().tolist())
+                    
+                    # Update progress bar with current loss
+                    train_iterator.set_postfix({'loss': f"{loss.item():.4f}"})
                 
-                train_loss += loss.item() * self.gradient_accumulation_steps
+                # Calculate training metrics
+                train_loss /= len(self.train_loader)
+                train_acc = accuracy_score(all_labels, all_predictions)
+                train_f1 = f1_score(all_labels, all_predictions, average='macro')
                 
-                # Get predictions for metrics
-                _, preds = torch.max(outputs, dim=1)
-                all_predictions.extend(preds.cpu().tolist())
-                all_labels.extend(labels.cpu().tolist())
+                # Validation phase
+                val_loss, val_acc, val_f1, val_precision, val_recall = self.evaluate(self.val_loader, "Validation")
+
+                # Log validation metrics
+                logger.info(f"Validation - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}, "
+                            f"Precision: {val_precision:.4f}, Recall: {val_recall:.4f}")
                 
-                # Update progress bar with current loss
-                train_iterator.set_postfix({'loss': f"{loss.item():.4f}"})
+                # Adjust learning rate based on validation performance
+                self.scheduler.step(val_f1)
+                
+                # Save best model
+                if val_f1 > self.best_val_f1:
+                    self.best_val_f1 = val_f1
+                    self.best_model_state = self.model.state_dict().copy()
+                    torch.save(self.model.state_dict(), save_path)
+                    logger.info(f"New best model saved with validation F1: {val_f1:.4f}")
+                
+                # Print epoch summary
+                epoch_time = time.time() - start_time
+                logger.info(f"Epoch {epoch+1}/{epochs} - "
+                        f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Train F1: {train_f1:.4f}, "
+                        f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val F1: {val_f1:.4f}, "
+                        f"Time: {epoch_time:.2f}s")
+        except Exception as e:
+            logger.error(f"Error during training: {e}")
+            import traceback
+            logger.error(traceback.format_exc())    
             
-            # Calculate training metrics
-            train_loss /= len(self.train_loader)
-            train_acc = accuracy_score(all_labels, all_predictions)
-            train_f1 = f1_score(all_labels, all_predictions, average='macro')
-            
-            # Validation phase
-            val_loss, val_acc, val_f1, val_precision, val_recall = self.evaluate(self.val_loader, "Validation")
-            
-            # Adjust learning rate based on validation performance
-            self.scheduler.step(val_f1)
-            
-            # Save best model
-            if val_f1 > self.best_val_f1:
-                self.best_val_f1 = val_f1
-                self.best_model_state = self.model.state_dict().copy()
-                torch.save(self.model.state_dict(), save_path)
-                logger.info(f"New best model saved with validation F1: {val_f1:.4f}")
-            
-            # Print epoch summary
-            epoch_time = time.time() - start_time
-            logger.info(f"Epoch {epoch+1}/{epochs} - "
-                       f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Train F1: {train_f1:.4f}, "
-                       f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val F1: {val_f1:.4f}, "
-                       f"Time: {epoch_time:.2f}s")
-        
         # Load best model for final evaluation
         if self.best_model_state is not None:
             self.model.load_state_dict(self.best_model_state)
@@ -197,7 +223,21 @@ class Trainer:
                 eval_loss += loss.item()
                 
                 # Get predictions
-                _, preds = torch.max(outputs, dim=1)
+                # Get predictions for metrics
+                if self.num_categories > 1:
+                    batch_size, total_classes = outputs.shape
+                    if total_classes % self.num_categories != 0:
+                        raise ValueError(f"Error: Number of total classes in the batch must of divisible by {self.num_categories}")
+
+                    classes_per_group = total_classes // self.num_categories
+                    # Group every classes_per_group values along dim=1
+                    reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+
+                    # Argmax over each group of classes_per_group
+                    preds = reshaped.argmax(dim=-1)
+                else:
+                    _, preds = torch.max(outputs, dim=1)
+
                 all_predictions.extend(preds.cpu().tolist())
                 all_labels.extend(labels.cpu().tolist())
         

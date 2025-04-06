@@ -32,7 +32,7 @@ def main():
     # Data arguments
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset file (CSV or TSV)")
     parser.add_argument("--text_column", type=str, default="text", help="Name of the text column")
-    parser.add_argument("--label_column", type=str, default="label", help="Name of the label column")
+    parser.add_argument("--label_column", type=str, nargs="+", help="Name of the label column")
     parser.add_argument("--val_split", type=float, default=0.1, help="Validation set split ratio")
     parser.add_argument("--test_split", type=float, default=0.1, help="Test set split ratio")
     
@@ -67,12 +67,14 @@ def main():
     # Log args for debugging
     logger.info(f"Running with arguments: {args}")
     
+    num_categories = len(args.label_column) if isinstance(args.label_column, list) else 1
+    label_column = args.label_column[0] if isinstance(args.label_column, list) and len(args.label_column) == 1 else args.label_column
     # Load and prepare data
     logger.info("Loading and preparing data...")
     train_data, val_data, test_data = load_data(
         args.data_path,
         text_col=args.text_column,
-        label_col=args.label_column,
+        label_col=label_column,
         validation_split=args.val_split,
         test_split=args.test_split,
         seed=args.seed
@@ -98,7 +100,8 @@ def main():
     model = DocBERT(
         num_classes=args.num_classes,
         bert_model_name=args.bert_model,
-        dropout_prob=args.dropout
+        dropout_prob=args.dropout,
+        num_categories=num_categories
     )
     
     # Count and log model parameters
@@ -116,12 +119,13 @@ def main():
         lr=args.learning_rate,
         weight_decay=args.weight_decay,
         warmup_proportion=args.warmup_proportion,
-        gradient_accumulation_steps=args.grad_accum_steps
+        gradient_accumulation_steps=args.grad_accum_steps,
+        num_categories=num_categories,
     )
     
     # Train the model
     logger.info("Starting training...")
-    save_path = os.path.join(args.output_dir, "bert-base-uncased")
+    save_path = os.path.join(args.output_dir, args.bert_model.replace("/", "_") + "_finetuned")
     trainer.train(epochs=args.epochs, save_path=save_path)
     
     logger.info("Training completed!")

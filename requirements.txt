@@ -2,6 +2,10 @@ scikit-learn
 numpy
 pandas
 torch
-transformers
+transformers>=4.28.0
+tokenizers
 datasets
 torchtext
+maturin
+underthesea --only-binary :all:
+accelerate

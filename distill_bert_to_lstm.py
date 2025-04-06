@@ -37,7 +37,7 @@ def main():
     # Data arguments
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset file (CSV or TSV)")
     parser.add_argument("--text_column", type=str, default="text", help="Name of the text column")
-    parser.add_argument("--label_column", type=str, default="label", help="Name of the label column")
+    parser.add_argument("--label_column", type=str, nargs="+", help="Name of the label column")
     parser.add_argument("--val_split", type=float, default=0.1, help="Validation set split ratio")
     parser.add_argument("--test_split", type=float, default=0.1, help="Test set split ratio")
     
@@ -79,10 +79,12 @@ def main():
     logger.info("Loading and preparing data...")
     
     # Load data first
+    label_column = args.label_column[0] if isinstance(args.label_column, list) and len(args.label_column) == 1 else args.label_column
+    num_categories = len(args.label_column) if isinstance(args.label_column, list) else 1
     train_data, val_data, test_data = load_data(
         args.data_path,
         text_col=args.text_column,
-        label_col=args.label_column,
+        label_col=label_column,
         validation_split=args.val_split,
         test_split=args.test_split,
         seed=args.seed
@@ -115,7 +117,8 @@ def main():
     bert_model = DocBERT(
         num_classes=args.num_classes,
         bert_model_name=args.bert_model,
-        dropout_prob=0.1
+        dropout_prob=0.1,
+        num_categories=num_categories
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Load saved BERT weights
@@ -128,7 +131,7 @@ def main():
         vocab_size=vocab_size,
         embedding_dim=args.embedding_dim,
         hidden_dim=args.hidden_dim,
-        output_dim=args.num_classes,
+        output_dim=args.num_classes * num_categories,
         n_layers=args.num_layers,
         dropout=args.dropout
     )
