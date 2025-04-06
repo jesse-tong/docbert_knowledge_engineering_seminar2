@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import logging
 import os
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 
 logger = logging.getLogger(__name__)
 
@@ -189,10 +190,14 @@ class DistillationTrainer:
             
             # Calculate training metrics
             train_loss = train_loss / len(self.train_loader)
-            train_acc = sum(1 for p, l in zip(all_preds, all_labels) if p == l) / len(all_preds)
+            if self.num_categories > 1:
+                all_labels = np.concatenate(all_labels, axis=0)
+                all_preds = np.concatenate(all_preds, axis=0)
+            #train_acc = sum(1 for p, l in zip(all_preds, all_labels) if p == l) / len(all_preds)
             
+            train_acc = accuracy_score(all_labels, all_preds)
             # Evaluate on validation set
-            val_loss, val_acc, val_f1 = self.evaluate()
+            val_loss, val_acc, val_precision, val_recall, val_f1 = self.evaluate()
             
             # Update learning rate based on validation performance
             self.scheduler.step(val_f1)
@@ -205,11 +210,11 @@ class DistillationTrainer:
                     'model_state_dict': self.student_model.state_dict(),
                     'label_mapping': self.label_mapping,
                 }, save_path)
-                logger.info(f"New best model saved with validation F1: {val_f1:.4f}")
+                logger.info(f"New best model saved with validation F1: {val_f1:.4f}, accuracy: {val_acc:.4f}")
             
             logger.info(f"Epoch {epoch+1}/{epochs}: "
                       f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
-                      f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val F1: {val_f1:.4f}")
+                      f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Precision: {val_precision:.4f}, Val Recall: {val_recall:.4f}, Val F1: {val_f1:.4f}")
         
         # Load best model for final evaluation
         if self.best_model_state is not None:
@@ -285,11 +290,17 @@ class DistillationTrainer:
         # Calculate metrics
         eval_loss = eval_loss / len(data_loader)
         
+        if self.num_categories > 1:
+            # Concatenate all labels and predictions
+            all_labels = np.concatenate(all_labels, axis=0)
+            all_preds = np.concatenate(all_preds, axis=0)
         # Accuracy
-        accuracy = sum(1 for p, l in zip(all_preds, all_labels) if p == l) / len(all_preds)
-        
+        accuracy = accuracy_score(all_labels, all_preds)
+        # Precision
+        precision = precision_score(all_labels, all_preds, average='macro')
+        # Recall
+        recall = recall_score(all_labels, all_preds, average='macro')
         # F1 score (macro-averaged)
-        from sklearn.metrics import f1_score
         f1 = f1_score(all_labels, all_preds, average='macro')
         
-        return eval_loss, accuracy, f1
+        return eval_loss, accuracy, precision, recall, f1

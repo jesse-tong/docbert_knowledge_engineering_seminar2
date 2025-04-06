@@ -165,8 +165,16 @@ class Trainer:
             
             # Calculate training metrics
             train_loss /= len(self.train_loader)
-            train_acc = accuracy_score(all_labels, all_predictions)
-            train_f1 = f1_score(all_labels, all_predictions, average='macro')
+            if self.num_categories > 1:
+                # Flatten the list of predictions and labels
+                all_predictions = np.concatenate(all_predictions)
+                all_labels = np.concatenate(all_labels)
+                
+                train_acc = accuracy_score(all_labels, all_predictions)
+                train_f1 = f1_score(all_labels, all_predictions, average='macro')
+            else:
+                train_acc = accuracy_score(all_labels, all_predictions)
+                train_f1 = f1_score(all_labels, all_predictions, average='macro')
             
             # Validation phase
             val_loss, val_acc, val_f1, val_precision, val_recall = self.evaluate(self.val_loader, "Validation")
@@ -271,6 +279,11 @@ class Trainer:
                 all_predictions.extend(preds.cpu().tolist())
                 all_labels.extend(labels.cpu().tolist())
         
+        if self.num_categories > 1:
+            # Flatten the list of predictions and labels
+            all_predictions = np.concatenate(all_predictions)
+            all_labels = np.concatenate(all_labels)
+
         # Calculate metrics
         eval_loss /= len(data_loader)
         accuracy = accuracy_score(all_labels, all_predictions)
