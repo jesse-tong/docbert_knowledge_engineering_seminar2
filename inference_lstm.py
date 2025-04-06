@@ -14,7 +14,7 @@ import copy
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Document Classification with LSTM")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset")
-    parser.add_argument("--bert_model", type=str, default="bert-base-uncased", help="BERT model name or path used for distillation (as we'll use its tokenizer)")
+    parser.add_argument("--bert_tokenizer", type=str, default="bert-base-uncased", help="BERT model name or path used for distillation (as we'll use its tokenizer)")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model")
     parser.add_argument("--max_seq_length", type=int, default=250, help="Maximum sequence length for LSTM")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and evaluation")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         train_data, 
         val_data, 
         test_data,
-        tokenizer_name=args.bert_model,
+        tokenizer_name=args.bert_tokenizer,
         max_length=args.max_seq_length,
         batch_size=args.batch_size,
         num_classes=args.num_classes,
@@ -72,15 +72,6 @@ if __name__ == "__main__":
                            hidden_dim=args.hidden_dim,
                            n_layers=args.num_layers,
                            output_dim=args.num_classes * num_categories)
-
-    # I don't know why the model is trained with 30000 embedding size (maybe I forgot to update the distillation code before training)
-    # so this is a temporary fix
-    if model_state['model_state_dict']['embedding.weight'].shape[0] == 30000:
-        model = DocumentBiLSTM(vocab_size=30000,
-                                 embedding_dim=args.embedding_dim,
-                                 hidden_dim=args.hidden_dim,
-                                 n_layers=args.num_layers,
-                                 output_dim=args.num_classes)
     
     if 'model_state_dict' in model_state:
         model.load_state_dict(model_state['model_state_dict'], strict=False)

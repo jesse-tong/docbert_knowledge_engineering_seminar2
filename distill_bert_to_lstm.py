@@ -126,15 +126,13 @@ def main():
     print("Train samples: ", len(bert_train_dataset))
     print("Validation samples: ", len(bert_val_dataset))
     print("Test samples: ", len(bert_test_dataset))
-    
+
     # Create dataloaders 
     bert_train_loader = torch.utils.data.DataLoader(bert_train_dataset, batch_size=args.batch_size, shuffle=True)
     bert_val_loader = torch.utils.data.DataLoader(bert_val_dataset, batch_size=args.batch_size)
     bert_test_loader = torch.utils.data.DataLoader(bert_test_dataset, batch_size=args.batch_size)
     
-    vocab_size = bert_train_dataset.tokenizer.vocab_size
     
-    logger.info(f"LSTM Vocabulary size: {vocab_size}")
     
     # Load pre-trained BERT model (teacher)
     logger.info("Loading pre-trained BERT model (teacher)...")
@@ -148,7 +146,12 @@ def main():
     # Load saved BERT weights
     bert_model.load_state_dict(torch.load(args.bert_model_path, map_location=device))
     logger.info(f"Loaded teacher model from {args.bert_model_path}")
+
+    vocab_size = bert_model.bert.tokenizer.vocab_size
     
+    logger.info(f"LSTM Vocabulary size: {vocab_size}")
+    print("LSTM Vocabulary size: ", vocab_size)
+
     # Initialize LSTM model (student)
     logger.info("Initializing LSTM model (student)...")
     lstm_model = DocumentBiLSTM(
