@@ -14,6 +14,8 @@ class DocBERT(nn.Module):
    
         self.bert = AutoModel.from_pretrained(bert_model_name)
         self.config = AutoConfig.from_pretrained(bert_model_name)
+        print(f"Model: {bert_model_name}")
+        print(f"Max Position Embeddings: {self.config.max_position_embeddings}")
         
         # Dropout layer for regularization (helps prevent overfitting)
         self.dropout = nn.Dropout(dropout_prob)
