@@ -123,7 +123,6 @@ if __name__ == "__main__":
 
     # Turn predictions and labels to 1D arrays
     all_labels = all_labels.reshape(-1, 1)
-    all_labels = np.array([int(label) for label in all_labels])
     all_predictions = all_predictions.reshape(-1, 1)
 
     # Print classification report
