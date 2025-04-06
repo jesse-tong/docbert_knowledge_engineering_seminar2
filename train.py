@@ -79,7 +79,7 @@ def main():
         test_split=args.test_split,
         seed=args.seed
     )
-    print(f"DEBUG: num_categories passed to Trainer: {num_categories}")
+
     # Create data loaders
     train_loader, val_loader, test_loader = create_data_loaders(
         train_data, 

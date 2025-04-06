@@ -18,9 +18,6 @@ class DocumentDataset(Dataset):
         self.num_classes = num_classes
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
-
-        print(f"DEBUG: DocumentDataset init - received labels shape: {labels.shape}")
-        print(f"DEBUG: DocumentDataset init - num_classes: {self.num_classes}")
         
         if type(labels) is not np.ndarray and type(labels) is not list:
             # Validate labels
@@ -71,7 +68,7 @@ class DocumentDataset(Dataset):
     def __getitem__(self, idx):
         text = str(self.texts[idx])
         label = self.labels[idx]
-        print(f"DEBUG: DocumentDataset getitem - label shape BEFORE tensor conversion: {label.shape}")
+
         # Tokenize the text with attention mask and truncation
         encoding = self.tokenizer.encode_plus(
             text,
@@ -185,9 +182,6 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
     
     # Log stats about the dataset
     logger.info(f"Dataset splits: train={train_size}, val={val_size}, test={test_size}")
-    print(f"DEBUG: Labels shape AFTER load_data - Train: {train_labels.shape}")
-    print(f"DEBUG: Labels shape AFTER load_data - Val: {val_labels.shape}")
-    print(f"DEBUG: Labels shape AFTER load_data - Test: {test_labels.shape}")
     # Also print the num_categories being passed
     
     return (train_texts, train_labels), (val_texts, val_labels), (test_texts, test_labels)
@@ -200,16 +194,6 @@ def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-ba
     train_texts, train_labels = train_data
     val_texts, val_labels = val_data
     test_texts, test_labels = test_data
-
-    print("Train labels shape:", train_labels.shape)
-    print("Val labels shape:", val_labels.shape)
-    print("Test labels shape:", test_labels.shape)
-    print("First train text:", train_texts[0])
-    print("First train label:", train_labels[0])
-    print("First val text:", val_texts[0])
-    print("First val label:", val_labels[0])
-    print("First test text:", test_texts[0])
-    print("First test label:", test_labels[0])
     
     # Create datasets
     train_dataset = DocumentDataset(train_texts, train_labels, tokenizer_name, max_length, num_classes)
