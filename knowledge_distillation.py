@@ -106,7 +106,7 @@ class DistillationTrainer:
                 if category_labels.max() >= self.num_classes or category_labels.min() < 0:
                     print(f"ERROR: Category {i} labels out of range [0, {self.num_classes - 1}]: min={category_labels.min()}, max={category_labels.max()}")
                     
-                total_loss += self.criterion(category_outputs, category_labels)
+                total_loss += self.ce_loss(category_outputs, category_labels)
 
             ce_loss = total_loss / self.num_categories # Average loss
         else:
@@ -268,7 +268,7 @@ class DistillationTrainer:
                         if category_labels.max() >= self.num_classes or category_labels.min() < 0:
                             print(f"ERROR: Category {i} labels out of range [0, {self.num_classes - 1}]: min={category_labels.min()}, max={category_labels.max()}")
                             
-                        total_loss += self.criterion(category_outputs, category_labels)
+                        total_loss += self.ce_loss(category_outputs, category_labels)
 
                     loss = total_loss / self.num_categories # Average loss
                 else:
