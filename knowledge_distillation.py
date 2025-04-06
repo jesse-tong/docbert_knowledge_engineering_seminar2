@@ -215,6 +215,10 @@ class DistillationTrainer:
             logger.info(f"Epoch {epoch+1}/{epochs}: "
                       f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
                       f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Precision: {val_precision:.4f}, Val Recall: {val_recall:.4f}, Val F1: {val_f1:.4f}")
+            
+            print(f"Epoch {epoch+1}/{epochs}: ",
+                      f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, ",
+                      f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Precision: {val_precision:.4f}, Val Recall: {val_recall:.4f}, Val F1: {val_f1:.4f}")
         
         # Load best model for final evaluation
         if self.best_model_state is not None:
@@ -225,6 +229,7 @@ class DistillationTrainer:
         if self.test_loader:
             test_loss, test_acc, test_f1 = self.evaluate(self.test_loader, "Test")
             logger.info(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
+            print(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
     
     def evaluate(self, data_loader=None, phase="Validation"):
         """

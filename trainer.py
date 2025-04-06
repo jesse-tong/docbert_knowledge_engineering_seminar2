@@ -199,6 +199,10 @@ class Trainer:
                     f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Train F1: {train_f1:.4f}, "
                     f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val F1: {val_f1:.4f}, "
                     f"Time: {epoch_time:.2f}s") 
+            print(f"Epoch {epoch+1}/{epochs} - ",
+                    f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Train F1: {train_f1:.4f}, ",
+                    f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val F1: {val_f1:.4f}, ",
+                    f"Time: {epoch_time:.2f}s")
 
         # Load best model for final evaluation
         if self.best_model_state is not None:
@@ -210,6 +214,9 @@ class Trainer:
             test_loss, test_acc, test_f1, test_precision, test_recall = self.evaluate(self.test_loader, "Test")
             logger.info(f"Final test results - "
                        f"Loss: {test_loss:.4f}, Acc: {test_acc:.4f}, F1: {test_f1:.4f}, "
+                       f"Precision: {test_precision:.4f}, Recall: {test_recall:.4f}")
+            print(f"Final test results - ",
+                       f"Loss: {test_loss:.4f}, Acc: {test_acc:.4f}, F1: {test_f1:.4f}, ",
                        f"Precision: {test_precision:.4f}, Recall: {test_recall:.4f}")
     
     def evaluate(self, data_loader, phase="Validation"):
