@@ -186,6 +186,9 @@ def create_data_loaders(train_data, val_data, test_data, tokenizer_name='bert-ba
     val_texts, val_labels = val_data
     test_texts, test_labels = test_data
 
+    print("Train labels shape:", train_labels.shape)
+    print("Val labels shape:", val_labels.shape)
+    print("Test labels shape:", test_labels.shape)
     print("First train text:", train_texts[0])
     print("First train label:", train_labels[0])
     print("First val text:", val_texts[0])
