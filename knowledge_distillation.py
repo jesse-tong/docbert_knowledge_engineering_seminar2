@@ -227,7 +227,7 @@ class DistillationTrainer:
         
         # Final evaluation on test set if provided
         if self.test_loader:
-            test_loss, test_acc, test_f1 = self.evaluate(self.test_loader, "Test")
+            test_loss, test_acc, test_precision, test_recall, test_f1 = self.evaluate(self.test_loader, "Test")
             logger.info(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
             print(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
     
