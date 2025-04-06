@@ -118,10 +118,10 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
                 label_map = {label: idx for idx, label in enumerate(sorted(df[label].unique()))}
                 df[f'label_numeric_{idx}'] = df[label].map(label_map)
                 if labels is None:
-                    labels = df[f'label_numeric_{idx}'].values
+                    labels = df[f'label_numeric_{idx}'].values.reshape(-1, 1)
                 else:
                     # Extend the labels array to dim 1
-                    labels = np.column_stack((labels, df[f'label_numeric_{idx}'].values))
+                    labels = np.concatenate((labels, df[f'label_numeric_{idx}'].values.reshape(-1, 1)), axis=1)
                 
                 # Log the mapping for reference
                 logger.info(f"Label mapping for column '{label}': {label_map}")
