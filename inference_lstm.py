@@ -104,7 +104,6 @@ if __name__ == "__main__":
                 reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, num_categories, classes_per_group)
                 probs = F.softmax(reshaped, dim=1)
                 # Argmax over each group of classes_per_group
-                preds = reshaped.argmax(dim=-1)
                 print("DEBUG: Reshaped shape: ", reshaped.shape)
 
                 predictions = torch.argmax(probs, dim=1)
