@@ -121,6 +121,7 @@ def main():
         warmup_proportion=args.warmup_proportion,
         gradient_accumulation_steps=args.grad_accum_steps,
         num_categories=num_categories,
+        num_classes=args.num_classes,
     )
     
     # Train the model

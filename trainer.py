@@ -28,6 +28,7 @@ class Trainer:
         warmup_proportion=0.1,
         gradient_accumulation_steps=1,
         max_grad_norm=1.0,
+        num_classes=2,
         num_categories=1,
         device=None
     ):
@@ -70,6 +71,7 @@ class Trainer:
         self.best_val_f1 = 0.0
         self.best_model_state = None
 
+        self.num_classes = num_classes  # Number of classes for classification
         # For training if using multiple categories (e.g., multiple sentiment classes, there can be multiple sentiment in one document)
         self.num_categories = num_categories
     
@@ -237,7 +239,7 @@ class Trainer:
                         end_idx = (i + 1) * self.num_classes
                         category_outputs = outputs[:, start_idx:end_idx] # Shape (batch, num_classes)
                         category_labels = labels[:, i] # Shape (batch)
-                        
+
                         # Ensure category_labels are in [0, self.num_classes - 1]
                         if category_labels.max() >= self.num_classes or category_labels.min() < 0:
                             print(f"ERROR: Category {i} labels out of range [0, {self.num_classes - 1}]: min={category_labels.min()}, max={category_labels.max()}")

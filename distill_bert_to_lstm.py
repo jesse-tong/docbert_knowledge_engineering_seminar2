@@ -153,6 +153,8 @@ def main():
         temperature=args.temperature,
         alpha=args.alpha,
         lr=args.learning_rate,
+        num_categories=num_categories,
+        num_classes=args.num_classes,
         weight_decay=1e-5
     )
     

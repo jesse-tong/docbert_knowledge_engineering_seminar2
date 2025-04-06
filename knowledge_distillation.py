@@ -26,6 +26,7 @@ class DistillationTrainer:
         max_grad_norm=1.0,
         label_mapping=None,
         num_categories=1,
+        num_classes=2,
         device=None
     ):
         self.teacher_model = teacher_model
@@ -37,6 +38,7 @@ class DistillationTrainer:
         self.alpha = alpha
         self.max_grad_norm = max_grad_norm
         self.num_categories = num_categories
+        self.num_classes = num_classes
         
         self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"Using device: {self.device}")
