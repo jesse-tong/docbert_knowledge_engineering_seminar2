@@ -88,8 +88,8 @@ def main():
         args.train_data_path,
         text_col=args.text_column,
         label_col=label_column,
-        validation_split=args.val_split,
-        test_split=args.test_split,
+        validation_split=0.0,
+        test_split=0.0,
         seed=args.seed
     )
 
@@ -123,6 +123,7 @@ def main():
         return_datasets=True
     )
 
+    print("Train samples: ", len(bert_train_dataset))
     # Create dataloaders 
     bert_train_loader = torch.utils.data.DataLoader(bert_train_dataset, batch_size=args.batch_size, shuffle=True)
     bert_val_loader = torch.utils.data.DataLoader(bert_val_dataset, batch_size=args.batch_size)
