@@ -93,7 +93,7 @@ if __name__ == "__main__":
             all_labels = np.append(all_labels, labels.cpu().numpy())
 
             outputs = model(input_ids, attention_mask=attention_mask)
-            probs = F.softmax(outputs, dim=1)
+            
             if num_categories > 1:
                 batch_size, total_classes = outputs.shape
                 if total_classes % num_categories != 0:
@@ -101,12 +101,15 @@ if __name__ == "__main__":
 
                 classes_per_group = total_classes // num_categories
                 # Group every classes_per_group values along dim=1
-                reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
+                reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, num_categories, classes_per_group)
 
                 # Argmax over each group of classes_per_group
                 preds = reshaped.argmax(dim=-1)
+                print("DEBUG: Reshaped shape: ", reshaped.shape)
+                probs = F.softmax(preds, dim=1)
                 predictions = torch.argmax(probs, dim=1)
             else:
+                probs = F.softmax(outputs, dim=1)
                 predictions = torch.argmax(probs, dim=1)
 
             print("DEBUG: Prediction shape: ", predictions.shape)
