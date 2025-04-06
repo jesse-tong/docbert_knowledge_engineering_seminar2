@@ -85,7 +85,7 @@ def main():
     num_categories = len(args.label_column) if isinstance(args.label_column, list) else 1
     
     train_data, _, _ = load_data(
-        args.data_path,
+        args.train_data_path,
         text_col=args.text_column,
         label_col=label_column,
         validation_split=args.val_split,
