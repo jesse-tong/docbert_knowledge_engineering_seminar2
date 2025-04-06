@@ -98,7 +98,6 @@ class Trainer:
                 attention_mask = batch['attention_mask'].to(self.device)
                 token_type_ids = batch['token_type_ids'].to(self.device)
                 labels = batch['label'].to(self.device)
-                print(f"Phase: training, Labels shape: {labels.shape}, Min label: {labels.min()}, Max label: {labels.max()}")
                 
                 # Forward pass
                 outputs = self.model(
