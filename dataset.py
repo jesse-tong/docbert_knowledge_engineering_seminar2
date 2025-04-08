@@ -19,7 +19,9 @@ class DocumentDataset(Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
         
-        if type(labels) is not np.ndarray and type(labels) is not list:
+        if labels is None:
+            self.labels = np.zeros(len(texts), dtype=int)
+        elif type(labels) is not np.ndarray and type(labels) is not list:
             # Validate labels
             unique_labels = set(labels)
             min_label = min(unique_labels) if unique_labels else 0
@@ -67,7 +69,7 @@ class DocumentDataset(Dataset):
 
     def __getitem__(self, idx):
         text = str(self.texts[idx])
-        label = self.labels[idx]
+        label = self.labels[idx] if self.labels is not None else torch.tensor(0, dtype=torch.long)
 
         # Tokenize the text with attention mask and truncation
         encoding = self.tokenizer.encode_plus(
@@ -92,7 +94,7 @@ class DocumentDataset(Dataset):
         """Get original text for a given index"""
         return {
             'text': self.texts[idx],
-            'label': self.labels[idx]
+            'label': self.labels[idx] if self.labels is not None else None
         }
     
 def load_data(data_path, text_col='text', label_col: str | list ='label', validation_split=0.1, test_split=0.1, seed=42):

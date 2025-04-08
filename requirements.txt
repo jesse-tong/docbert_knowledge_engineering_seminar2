@@ -9,3 +9,4 @@ torchtext
 maturin
 underthesea --only-binary :all:
 accelerate
+streamlit
