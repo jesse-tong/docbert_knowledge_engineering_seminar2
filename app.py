@@ -1,7 +1,6 @@
 import streamlit as st
 from api import load_model_bert, load_model_lstm, inference
 import pandas as pd
-import git
 
 # Set up the Streamlit app
 def app():
@@ -50,11 +49,5 @@ def app():
             st.warning("Hãy nhập một vài bình luận.")
 
 if __name__ == "__main__":
-    # Clone from https://huggingface.co/jesse-tong/vietnamese_hate_speech_detection_phobert
-    # if the directory named ./vietnamese_hate_speech_detection_phobert does not exist
-    # If you want to train the model instead of using the pre-trained model, please refer to the example_uses.md
-    repo_url = "https://huggingface.co/jesse-tong/vietnamese_hate_speech_detection_phobert"
-    repo_dir = "./vietnamese_hate_speech_detection_phobert"
-    if not git.Repo(repo_dir).git_dir.exists():
-        git.Repo.clone_from(repo_url, repo_dir)
+    
     app()

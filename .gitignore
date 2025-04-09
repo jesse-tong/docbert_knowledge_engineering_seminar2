@@ -8,4 +8,3 @@ __pycache__/
 metrics.txt
 predictions.txt
 *.pth
-vietnamese_hate_speech_detection_phobert/
