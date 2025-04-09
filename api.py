@@ -64,7 +64,7 @@ def inference(model, device, comments: str | list):
         if args["num_categories"] > 1:
             batch_size, total_classes = outputs.shape
             if total_classes % args["num_categories"] != 0:
-                raise ValueError(f"Error: Number of total classes in the batch must of divisible by {args["num_categories"]}")
+                raise ValueError(f"Error: Number of total classes in the batch must of divisible by {args['num_categories']}")
 
             classes_per_group = total_classes // args["num_categories"]
             # Group every classes_per_group values along dim=1
