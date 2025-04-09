@@ -4,9 +4,10 @@ import pandas as pd
 
 # Set up the Streamlit app
 def app():
+    st.set_page_config(layout="wide")
     st.title("Phân tích ngôn từ thù địch, phân biệt sử dụng PhoBERT và LSTM")
     
-      # Show loading progress bar
+    # Show loading progress bar
     # Load models
     @st.cache_resource
     def load_models():
@@ -33,17 +34,17 @@ def app():
             # Inference with BERT
             classification_bar = st.progress(0, "Đang phân tích với PhoBERT...")
             bert_predictions = inference(bert_model, bert_device, comments)
-            st.write("BERT Predictions:")
-            st.dataframe(pd.DataFrame(bert_predictions))
+            st.write("Phân loại của PhoBERT:")
+            st.table(pd.DataFrame(bert_predictions))
 
             classification_bar.progress(50, "Đang phân tích với LSTM...")
 
             # Inference with LSTM
             lstm_predictions = inference(lstm_model, lstm_device, comments)
-            st.write("LSTM Predictions:")
+            st.write("Phân loại của LSTM:")
             classification_bar.progress(100, "Phân tích hoàn tất!")
             classification_bar.empty()
-            st.dataframe(pd.DataFrame(lstm_predictions))
+            st.table(pd.DataFrame(lstm_predictions))
         else:
             st.warning("Hãy nhập một vài bình luận.")
 
