@@ -40,7 +40,7 @@ def load_model_lstm():
     model = model.to(device)
     return model, device
 
-def inference(model, device, comments: str | list):
+def inference(model, device, comments: str | list, threshold: float = 0.5):
     if isinstance(comments, str):
         comments = [comments]
     elif not isinstance(comments, list):
@@ -70,6 +70,9 @@ def inference(model, device, comments: str | list):
             # Group every classes_per_group values along dim=1
             reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
             probs = F.softmax(reshaped, dim=1)
+
+            # Keep only the probs that are above the threshold (to prevent false positive), else set it to 0 (NORMAL, in this case unconclusive)
+            probs = torch.where(probs > threshold, probs, 0.0)
             # Argmax over each group of classes_per_group
             predictions = probs.argmax(dim=-1)
         else:

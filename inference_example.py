@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--class_names", type=str, nargs='+', required=False, help="List of class names for classification")
     parser.add_argument("--inference_batch_limit", type=int, default=-1, help="Limit for inference batch counts")
     parser.add_argument("--print_predictions", type=bool, default=False, help="Print predictions to console")
+    parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for classification")
     args = parser.parse_args()
 
     class_names = args.class_names
@@ -75,7 +76,8 @@ if __name__ == "__main__":
                 classes_per_group = total_classes // num_categories
                 # Group every classes_per_group values along dim=1
                 reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
-
+                probs = torch.softmax(reshaped, dim=1)
+                probs = torch.where(probs > args.threshold, probs, 0.0)
                 # Argmax over each group of classes_per_group
                 predictions = reshaped.argmax(dim=-1)
             else:

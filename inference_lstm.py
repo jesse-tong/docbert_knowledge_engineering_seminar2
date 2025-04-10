@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
     parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
+    parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for classification")
     args = parser.parse_args()
 
     class_names = args.class_names
@@ -103,6 +104,7 @@ if __name__ == "__main__":
                 # Group every classes_per_group values along dim=1
                 reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, num_categories, classes_per_group)
                 probs = F.softmax(reshaped, dim=1)
+                probs = torch.where(probs > args.threshold, probs, 0.0)
                 # Argmax over each group of classes_per_group
 
                 predictions = torch.argmax(probs, dim=-1)
