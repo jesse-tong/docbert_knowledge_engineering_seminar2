@@ -17,6 +17,10 @@ if __name__ == "__main__":
         df = pandas.read_csv(file_path)
         if 'content' in df.columns:
             df['content'] = df['content'].apply(lambda text: word_segmentation_vi(str(text)))
+
+            if 'Unnamed: 0' in df.columns:
+                df.drop(columns=['Unnamed: 0'], inplace=True)
+
             df.to_csv(file_path, index=False)
             print(f"Processed {file}")
         else:
