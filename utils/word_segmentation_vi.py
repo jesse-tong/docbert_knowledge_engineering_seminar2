@@ -7,7 +7,7 @@ def word_segmentation_vi(text):
 
 if __name__ == "__main__":
     # Script này để segment các file CSV và TSV trong thư mục datasets cho tiếng Việt (do PhoBERT yêu cầu đầu vào đã được segment theo từ)
-    dataset_dir = "../datasets"
+    dataset_dir = "../datasets_vithsd"
 
     csv_files = [f for f in os.listdir(dataset_dir) if f.endswith('.csv')]
     tsv_files = [f for f in os.listdir(dataset_dir) if f.endswith('.tsv')]
