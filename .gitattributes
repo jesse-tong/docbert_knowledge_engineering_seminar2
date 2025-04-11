@@ -38,3 +38,4 @@ vietnamese_hate_speech_detection_phobert/* filter=lfs diff=lfs merge=lfs -text
 vietnamese_hate_speech_detection_phobert/*.pth filter=lfs diff=lfs merge=lfs -text
 vietnamese_hate_speech_detection_phobert/distilled_lstm_model.pth filter=lfs diff=lfs merge=lfs -text
 vietnamese_hate_speech_detection_phobert/vinai_phobert-base-v2_finetuned.pth filter=lfs diff=lfs merge=lfs -text
+
