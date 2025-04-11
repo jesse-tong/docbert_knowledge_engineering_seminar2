@@ -286,8 +286,8 @@ class Trainer:
                 else:
                     _, preds = torch.max(outputs, dim=1)
 
-                np.append(all_predictions, preds.cpu().tolist())
-                np.append(all_labels, labels.cpu().tolist())
+                all_predictions = np.append(all_predictions, preds.cpu().tolist())
+                all_labels = np.append(all_labels, labels.cpu().tolist())
         
 
         # Calculate metrics

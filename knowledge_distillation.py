@@ -289,8 +289,8 @@ class DistillationTrainer:
                     preds = reshaped.argmax(dim=-1)
                 else:
                     _, preds = torch.max(student_logits, 1)
-                np.append(all_preds, preds.cpu().numpy())
-                np.append(all_labels, labels.cpu().numpy())
+                all_preds = np.append(all_preds, preds.cpu().numpy())
+                all_labels = np.append(all_labels, labels.cpu().numpy())
         
         # Calculate metrics
         eval_loss = eval_loss / len(data_loader)
