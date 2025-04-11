@@ -240,8 +240,8 @@ class DistillationTrainer:
         
         self.student_model.eval()
         eval_loss = 0.0
-        all_preds = []
-        all_labels = []
+        all_preds = np.array([], dtype=int)
+        all_labels = np.array([], dtype=int)
         
         with torch.no_grad():
             for batch in tqdm(data_loader, desc=f"[{phase}]"):
@@ -289,8 +289,8 @@ class DistillationTrainer:
                     preds = reshaped.argmax(dim=-1)
                 else:
                     _, preds = torch.max(student_logits, 1)
-                all_preds.extend(preds.cpu().tolist())
-                all_labels.extend(labels.cpu().tolist())
+                np.append(all_preds, preds.cpu().numpy())
+                np.append(all_labels, labels.cpu().numpy())
         
         # Calculate metrics
         eval_loss = eval_loss / len(data_loader)
@@ -302,10 +302,10 @@ class DistillationTrainer:
         # Accuracy
         accuracy = accuracy_score(all_labels, all_preds)
         # Precision
-        precision = precision_score(all_labels, all_preds, average='macro')
+        precision = precision_score(all_labels, all_preds, average='weighted')
         # Recall
-        recall = recall_score(all_labels, all_preds, average='macro')
+        recall = recall_score(all_labels, all_preds, average='weighted')
         # F1 score (macro-averaged)
-        f1 = f1_score(all_labels, all_preds, average='macro')
+        f1 = f1_score(all_labels, all_preds, average='weighted')
         
         return eval_loss, accuracy, precision, recall, f1

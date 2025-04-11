@@ -225,8 +225,8 @@ class Trainer:
         """
         self.model.eval()
         eval_loss = 0
-        all_predictions = []
-        all_labels = []
+        all_predictions = np.array([], dtype=int)
+        all_labels = np.array([], dtype=int)
         
         # No gradient computation during evaluation
         with torch.no_grad():
@@ -278,24 +278,23 @@ class Trainer:
                     # Group every classes_per_group values along dim=1
                     reshaped = outputs.view(outputs.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
 
+                    # Softmax and apply threshold
+                    probs = torch.softmax(reshaped, dim=1)
+                    probs = torch.where(probs > 0.5, probs, 0.0)
                     # Argmax over each group of classes_per_group
-                    preds = reshaped.argmax(dim=-1)
+                    preds = probs.argmax(dim=-1)
                 else:
                     _, preds = torch.max(outputs, dim=1)
 
-                all_predictions.extend(preds.cpu().tolist())
-                all_labels.extend(labels.cpu().tolist())
+                np.append(all_predictions, preds.cpu().tolist())
+                np.append(all_labels, labels.cpu().tolist())
         
-        if self.num_categories > 1:
-            # Flatten the list of predictions and labels
-            all_predictions = np.concatenate(all_predictions)
-            all_labels = np.concatenate(all_labels)
 
         # Calculate metrics
         eval_loss /= len(data_loader)
         accuracy = accuracy_score(all_labels, all_predictions)
-        f1 = f1_score(all_labels, all_predictions, average='macro')
-        precision = precision_score(all_labels, all_predictions, average='macro', zero_division=0)
-        recall = recall_score(all_labels, all_predictions, average='macro', zero_division=0)
+        f1 = f1_score(all_labels, all_predictions, average='weighted')
+        precision = precision_score(all_labels, all_predictions, average='weighted', zero_division=0)
+        recall = recall_score(all_labels, all_predictions, average='weighted', zero_division=0)
         
         return eval_loss, accuracy, f1, precision, recall
