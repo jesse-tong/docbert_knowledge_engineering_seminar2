@@ -231,7 +231,7 @@ class DistillationTrainer:
             logger.info(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
             print(f"Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}, Test F1: {test_f1:.4f}")
     
-    def evaluate(self, data_loader=None, phase="Validation"):
+    def evaluate(self, data_loader=None, phase="Validation", threshold=0.55):
         """
         Evaluate the student model
         """
@@ -284,9 +284,11 @@ class DistillationTrainer:
                     classes_per_group = total_classes // self.num_categories
                     # Group every classes_per_group values along dim=1
                     reshaped = student_logits.view(student_logits.size(0), -1, classes_per_group)  # shape: (batch, self., classes_per_group)
-
+                    probs = F.softmax(reshaped, dim=1)
+                    # Keep only the probs that are above the threshold (to prevent false positive), else set it to 0 (NORMAL, in this case unconclusive)
+                    probs = torch.where(probs > threshold, probs, 0.0)
                     # Argmax over each group of classes_per_group
-                    preds = reshaped.argmax(dim=-1)
+                    preds = probs.argmax(dim=-1)
                 else:
                     _, preds = torch.max(student_logits, 1)
                 all_preds = np.append(all_preds, preds.cpu().numpy())

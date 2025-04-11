@@ -42,7 +42,7 @@ def classify_text(model, text):
         print(f"Error classifying text: {e}")
         return None
 
-def process_file(input_file, output_file, model, rate_limit_pause=4):
+def process_file(input_file, output_file, model, rate_limit_pause=4, text_col="free_text"):
     """Process a single CSV file to match the test.csv format"""
     print(f"Processing {input_file}...")
     
@@ -53,9 +53,9 @@ def process_file(input_file, output_file, model, rate_limit_pause=4):
         print(f"Error reading {input_file}: {e}")
         return
     
-    # Rename column free_text to content
-    if 'free_text' in df.columns:
-        df.rename(columns={'free_text': 'content'}, inplace=True)
+    # Rename column text_col to content
+    if text_col in df.columns:
+        df.rename(columns={text_col: 'content'}, inplace=True)
     elif 'content' not in df.columns:
         print(f"Error: 'content' column not found in {input_file}")
         return

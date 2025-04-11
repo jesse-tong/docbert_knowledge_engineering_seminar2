@@ -219,7 +219,7 @@ class Trainer:
                        f"Loss: {test_loss:.4f}, Acc: {test_acc:.4f}, F1: {test_f1:.4f}, ",
                        f"Precision: {test_precision:.4f}, Recall: {test_recall:.4f}")
     
-    def evaluate(self, data_loader, phase="Validation"):
+    def evaluate(self, data_loader, phase="Validation", threshold=0.55):
         """
         Evaluation function for both validation and test sets
         """
@@ -280,7 +280,7 @@ class Trainer:
 
                     # Softmax and apply threshold
                     probs = torch.softmax(reshaped, dim=1)
-                    probs = torch.where(probs > 0.5, probs, 0.0)
+                    probs = torch.where(probs > threshold, probs, 0.0)
                     # Argmax over each group of classes_per_group
                     preds = probs.argmax(dim=-1)
                 else:

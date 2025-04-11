@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256, help="Hidden dimension of LSTM")
     parser.add_argument("--num_layers", type=int, default=2, help="Number of LSTM layers")
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability")
-    parser.add_argument("--threshold", type=float, default=0.5, help="Threshold for classification")
+    parser.add_argument("--threshold", type=float, default=0.55, help="Threshold for classification")
     args = parser.parse_args()
 
     class_names = args.class_names
