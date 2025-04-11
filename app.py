@@ -1,6 +1,31 @@
 import streamlit as st
 from api import load_model_bert, load_model_lstm, inference
 import pandas as pd
+from huggingface_hub import hf_hub_download
+import os
+
+# Download the model files from Hugging Face Hub: https://huggingface.co/jesse-tong/vietnamese_hate_speech_detection_phobert
+# to vietnamese_hate_speech_detection_phobert directory
+if os.path.exists("vietnamese_hate_speech_detection_phobert") == False:
+    try:
+        os.mkdir("vietnamese_hate_speech_detection_phobert")
+    except FileExistsError:
+        pass
+
+    # Download the model files
+    hf_hub_download(
+        repo_id="jesse-tong/vietnamese_hate_speech_detection_phobert",
+        filename="vinai_phobert-base-v2_finetuned.pth",
+        repo_type="model",
+        local_dir="vietnamese_hate_speech_detection_phobert"
+    )
+    hf_hub_download(
+        repo_id="jesse-tong/vietnamese_hate_speech_detection_phobert",
+        filename="distilled_lstm_model.pth",
+        repo_type="model",
+        local_dir="vietnamese_hate_speech_detection_phobert"
+    )
+
 
 # Set up the Streamlit app
 def app():

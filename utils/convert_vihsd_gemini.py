@@ -12,7 +12,7 @@ def setup_genai(api_key):
     """Configure the Google Generative AI client with your API key"""
     return genai.Client(api_key=api_key)
 
-def classify_text(model, text):
+def classify_text(model, text, suggest_label=False):
     """Classify Vietnamese text into hate speech categories using Google's Generative AI"""
     prompt = f"""
     Analyze the following Vietnamese text for hate speech (each sentence is separated by a newline):
@@ -26,6 +26,8 @@ def classify_text(model, text):
     - politics (political hate speech)
     If the text doesn't specify a person or group in a category, return 0 for that category.
     Else, return 1 for CLEAN, 2 for OFFENSIVE, or 3 for HATE.
+
+    {'The number at the end of the sentence (between <SuggestLabel> and </SuggestLabel> tags is the suggestion label for the sentence. (0 is normal/clean, 1 is offensive/hate in at least one category)' if suggest_label else ''}
     
     For each sentence in the text, return only 5 numbers separated by commas (corresponding to the label of individual, groups, religion/creed, race/ethnicity, politics) and numbers for each sentence seperated by newlines, like (with no other text): 
     0,1,0,0,0
@@ -42,7 +44,7 @@ def classify_text(model, text):
         print(f"Error classifying text: {e}")
         return None
 
-def process_file(input_file, output_file, model, rate_limit_pause=4, text_col="free_text"):
+def process_file(input_file, output_file, model, rate_limit_pause=4, text_col="free_text", suggest_column="labels"):
     """Process a single CSV file to match the test.csv format"""
     print(f"Processing {input_file}...")
     
@@ -66,6 +68,8 @@ def process_file(input_file, output_file, model, rate_limit_pause=4, text_col="f
         if col not in df.columns:
             # Change column type to int if it doesn't exist
             df[col] = 0
+
+    print("Suggesting labels: ", 'True' if suggest_column in df.columns else 'False')
     
     # Process each batch (100 rows at a time)
     batch_size = 100
@@ -78,8 +82,16 @@ def process_file(input_file, output_file, model, rate_limit_pause=4, text_col="f
             continue
         
         # Join 50 rows by newlines, and classify all at once
-        text_to_classify = "\n".join([str(sentence) for sentence in batch_df['content'].tolist()])
-        classifications = classify_text(model, text_to_classify)
+        batch_strings = [str(sentence) for sentence in batch_df['content'].tolist()]
+        suggest_label = False
+        if suggest_column in df.columns:
+            batch_strings = [str(sentence) + " " + f"<SuggestLabel>{str(label)}</SuggestLabel>" for sentence, label in zip(batch_strings, batch_df[suggest_column].tolist())]
+            suggest_label = True
+
+
+        text_to_classify = "\n".join(batch_strings)
+        classifications = classify_text(model, text_to_classify, suggest_label=suggest_label)
+
 
         # Try 2 more times, else skip
         if classifications is None:
@@ -135,6 +147,7 @@ def main():
     parser.add_argument("--output_dir", required=True, help="Directory to save processed files")
     parser.add_argument("--api_key", required=True, help="Google Generative AI API key")
     parser.add_argument("--pause", type=float, default=4.0, help="Pause between API calls (seconds)")
+    parser.add_argument("--text_col", default="free_text", help="Column name for text content in input CSV files")
     
     args = parser.parse_args()
     
@@ -158,7 +171,7 @@ def main():
         if os.path.exists(output_file):
             print(f"Output file {output_file} already exists. Skipping...")
             continue
-        process_file(input_file, output_file, model, args.pause)
+        process_file(input_file, output_file, model, args.pause, text_col=args.text_col)
 
 if __name__ == "__main__":
     # This script is used to process ViHSD CSV files with Google Generative AI

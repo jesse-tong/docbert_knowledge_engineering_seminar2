@@ -19,7 +19,7 @@ def merge_csv_files(directories, output_file, target_name):
     merged.to_csv(output_file, index=False)
 
 if __name__ == "__main__":
-    directories = ["../datasets_vithsd", "../datasets_vihsd_gemini"]
+    directories = ["../datasets_vithsd", "../datasets_vihsd_gemini" , "../datasets_voz_gemini"]
     merge_csv_files(directories, "../datasets/train.csv", "train.csv")
     merge_csv_files(directories, "../datasets/dev.csv", "dev.csv")
     merge_csv_files(directories, "../datasets/test.csv", "test.csv")
