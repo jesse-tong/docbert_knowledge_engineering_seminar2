@@ -40,7 +40,7 @@ def load_model_lstm():
     model = model.to(device)
     return model, device
 
-def inference(model, device, comments: str | list, threshold: float = 0.6):
+def inference(model, device, comments: str | list, threshold: float = 0.5):
     if isinstance(comments, str):
         comments = [comments]
     elif not isinstance(comments, list):
