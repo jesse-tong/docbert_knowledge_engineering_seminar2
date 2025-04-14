@@ -151,7 +151,6 @@ def load_data(data_path, text_col='text', label_col: str | list ='label', valida
             df['label_numeric'] = df[label_col].map(label_map)
             labels = df['label_numeric'].values
             
-            # Log the mapping for reference
             logger.info(f"Label mapping: {label_map}")
         else:
             labels = df[label_col].values

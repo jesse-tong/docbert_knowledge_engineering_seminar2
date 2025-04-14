@@ -20,7 +20,7 @@ class DocBERT(nn.Module):
         # Dropout layer for regularization (helps prevent overfitting)
         self.dropout = nn.Dropout(dropout_prob)
         
-        # Multiple classification heads approach (inspired by Hedwig)
+        
         self.hidden_size = self.config.hidden_size
         self.num_categories = num_categories
         self.classifier = nn.Linear(self.hidden_size, num_classes*num_categories)

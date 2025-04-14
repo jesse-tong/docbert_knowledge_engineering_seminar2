@@ -1,0 +1,35 @@
+Sorry tui quên, cách thức code tui hoạt động thế này:
+
+#### Tạo texts và labels (load_data):
+- Đầu tiên là load mấy file dataset (ở đây chỉ hỗ trợ csv với tsv, không có json với parquet).
+- Nếu có nhiều cột categories (nếu nói theo thuật ngữ chuẩn thì cái này là classes, không phải categories, ở đây tui gọi là categories cho thống nhất), thì lấy mấy cột categories bỏ vào cột tạm, label encoding (không phải one-hot encoding do có nhiều classes (nếu nói theo thuật ngữ chuẩn thì cái này là labels, không phải classes, ở đây tui gọi là classes cho thống nhất) về dạng số, còn nếu chỉ có 1 category thì lấy nó ra, label encoding về dạng số thôi. Lưu ý chuyển về dạng số xong thì đảm bảo classes bắt đầu từ 0.
+- Nếu có nhiều categories thì sắp từng cột tạm theo chiều 1 (nói sao nhỉ, tưởng tượng nếu ta có ma trận m x n thì chiều 1 là ở từng cột từ trên xuống dưới), ở đây là sắp từng cột tạm chứa classes của từng category (chuyển về dạng (row_counts, 1) hay ma trận 2 chiều M_{row_counts x 1}) thành dạng là (row_counts, num_categories). Còn nếu có 1 category thì chỉ cần lấy cột tạm rồi sắp nó về mảng 1 chiều row_counts phần tử là được.
+- Sau cùng thì đảm bảo mấy classes bắt đầu từ 0 (sử dụng trick label mapping với label_map = {label: idx for idx, label in enumerate(sorted(set(labels)))} )
+- Texts thì cứ giữ nguyên là được, xử lý sau ở phần tạo dataset.
+
+#### Tạo dataset (create_data_loaders):
+- Sau khi có texts với labels xong thì truyền vào tạo từng dataset (sử dụng class Dataset trong thư viện torch (PyTorch)), trước hết ta đảm bảo label bắt đầu từ 0, còn không thì làm như bước 4 tạo texts và labels.
+- Với PhoBERT, ta cần đảm bảo input (khi train với inference) đã được qua word segmentation, ở đây tui sử dụng thư viện underthesea.
+- Sử dụng tokenizer của PhoBERT (PhoBERT sử dụng tokenizer tương tự BERT với output như nhau cả, chỉ khác là vốn từ do PhoBERT là cho ngôn ngữ tiếng Việt) (lưu ý phải sử dụng đúng tokenizer cho cả PhoBERT, LSTM trong quá trình train và inference nếu không sẽ không đúng và evaluation kết quả rất tệ do inputs truyền vào mô hình sau khi tokenize không đúng), để chuyển text và label về output có các thành phần như sau (lưu ý có truncation nên kích thước tối là 256 với PhoBERT và 512 với BERT, do ở đây input là bình luận thường là bình luận nên số tokens trung bình không nhiều nên thế này chấp nhận được):
+    - input_ids: Từng token chuyển về dạng ids số nguyên map với token tương ứng trong tokenizer của PhoBERT.
+    - attention_mask: Cái này là để cho BERT biết token nào cần được chú ý tới và không phải padding (giá trị  1), hoặc có thể bỏ qua và là padding (giá trị 0).
+    - token_types_id: Cái này là để cho BERT biết là cái loại token đặc biệt như [CLS] (cho phân loại), [MASK] (điền token khuyết), [SEP] (cho biết token tách từng câu do nếu truyền nhiều câu vào thì output thì chỉ gồm 1 vector nên token này cần để BERT biết ở đâu là tới câu khác),... Cái này không cần lắm cho bài toán phân loại này nên có thể bỏ qua.
+    - label: Nhãn (cái này chắc biết rồi).
+
+
+#### Cấu trúc mô hình DocBERT:
+- Khi gọi DocBERT sẽ lấy CLS outputs (pooled_output trong thư viện transformers của Huggingface, cái này đã qua pooling rồi nên dùng cho các bài toán classification), không phải sequential outputs (sequential outputs dùng trong mấy tác vụ như QA với POS tagging với so sánh văn bản)). 
+- Sử dụng layer normalization thay vì dùng batch normalization vì batch_normalization không tối ưu với batch nhỏ (mà thường mấy ứng dụng local cho người dùng cuối thì batch kích thước rất nhỏ) với thích hợp cho RNN/transformers
+- Với cả mô hình DocBERT và LSTM (2 chiều) thì sau khi đưa từ mô hình BERT và LSTM xử lý sử dụng layer normalization xong thì qua một linear layer có số chiều là (hidden_dim, num_labels * num_categories) (hidden_dim hình như cả BERT với PhoBERT đều là 768) (trong code ghi là num_classes thay vì num_labels, num_classes tôi lại ghi là num_categories, num_categories là các loại hình phân loại (ở đây là phân loại bình loại thù địch có nhiều loại như cá nhân, tổ chức, tôn giáo/tín ngưỡng)).
+- Với mô hình LSTM thì output có cả output từ chiều trái sang phải và phải sang trái (do mô hình này là bi-directional), ta ghép 2 output này lại rồi truyền vào linear layer (lưu ý là linear layer có dạng (hidden_dim * 2, num_classes * num_categories) chứ không phải (hidden_dim * 2, num_classes * num_categories) vì output cuối có số chiều hidden_dim * 2 (ta ghép 2 output ứng với 2 chiều, mỗi output có số chiều hidden_dim).
+
+#### Quá trình training:
+- Loss thì là CrossEntropyLoss vì mặc dù là có nhiều categories nhưng do các categories này tương đối độc lập với nhau nên thành ra vẫn là phân loại single-label (mỗi category có một label khác nhau, tống xác suất của các category cho từng label khác 100%)
+- Quá trình knowledge distillation (knowledge_distillation.py và distill_bert_to_lstm.py) thì dùng KL divergence (loss dựa trên so sánh output mô hình teacher là BERT và mô hình student là bi-directional LSTM), loss cuối cùng là cộng loss KL divergence (soft targets) với loss tính từ mô hình LSTM với labels (loss từ chính mô hình LSTM) theo một tỉ lệ nhất định. 
+
+#### Inference:
+- Khi thực hiện inference thì outputs của mấy mô hình có shape là (batch_size, num_classes * num_categories), đầu tiên thì group chiều 1 tức là chiều num_classes * num_categories thành num_categories vector có số chiều num_classes. Thực tế là làm kiểu được do trong dataset thì mỗi category có số lượng classes (num_classes) như nhau.
+- Sau đó là softmax từng vector để lấy xác suất của từng class trong category, chỉ lấy mấy giá trị mà hơn ngưỡng threshold nhất định (còn không thì đặt là 0, cái này để giảm false positive), lúc này thì outputs có dạng là (batch_size, num_categories, num_classes) sau đó dùng argmax cho từng vector (dim=-1, tức là argmax từ (batch_size, num_categories, num_classes) với từng category thì lấy argmax tức là lấy index của class có giá trị xác suất cao nhất). 
+
+#### Evaluation:
+- Còn evaluation thì sklearn nó không tính được cho vector 2D nên chuyển về 1D (vì category là tương đối độc lập với lại đây là bài toán single-label classification nên tính theo từng category hay không không quan trọng lắm chắc thế). GUI thì dùng Streamlit.
