@@ -28,7 +28,7 @@
 
 #### Quá trình training:
 - Loss thì là CrossEntropyLoss vì mặc dù là có nhiều categories nhưng do các categories này tương đối độc lập với nhau nên thành ra vẫn là phân loại single-label (mỗi category có một label khác nhau, tống xác suất của các category cho từng label khác 100%)
-- Quá trình knowledge distillation (knowledge_distillation.py và distill_bert_to_lstm.py) thì dùng KL divergence (loss dựa trên so sánh output mô hình teacher là BERT và mô hình student là bi-directional LSTM), loss cuối cùng là cộng loss KL divergence (soft targets) với loss tính từ mô hình LSTM với labels (loss từ chính mô hình LSTM) theo một tỉ lệ nhất định. 
+- Quá trình knowledge distillation (knowledge_distillation.py và distill_bert_to_lstm.py) thì dùng KL divergence (loss dựa trên so sánh output mô hình teacher là BERT và mô hình student là bi-directional LSTM), loss cuối cùng là cộng loss KL divergence (soft targets) với loss tính từ mô hình LSTM với labels (loss từ chính mô hình LSTM) theo một tỉ lệ nhất định (theo bài báo hình như là cả hai loại loss tỉ lệ như nhau). 
 
 #### Inference:
 - Khi thực hiện inference thì outputs của mấy mô hình có shape là (batch_size, num_classes * num_categories), đầu tiên thì group chiều 1 tức là chiều num_classes * num_categories thành num_categories vector có số chiều num_classes. Thực tế là làm kiểu được do trong dataset thì mỗi category có số lượng classes (num_classes) như nhau.

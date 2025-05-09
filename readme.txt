@@ -24,6 +24,8 @@ python ./inference_lstm.py --model_path "./vietnamese_hate_speech_detection_phob
 
 - Install the dependencies in requirements.txt: pip install -r requirements.txt
 
+- Datasets have been prepared and word segmented.
+
 - Either follow the "Train with BERT model" or "Train LSTM model from BERT model using distillation" in Example uses section above, or git clone the model from: "https://huggingface.co/jesse-tong/vietnamese_hate_speech_detection_phobert"
 
 - Run the Streamlit app: streamlit run app.py, then either go to http://localhost:8501 or waiting for the browser tab to open.
