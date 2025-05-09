@@ -1,4 +1,7 @@
-Sorry tui quên, cách thức code tui hoạt động thế này:
+### Cách thức code hoạt động:
+
+#### Tạo tập dữ liệu
+- Tập dữ liệu sử dụng là ViTHSD (phân loại chính), cộng thêm ViHSD và VOZ-HSD (phân loại bởi Gemini), tập dữ liệu tổng hợp trong thư mục datasets.
 
 #### Tạo texts và labels (load_data):
 - Đầu tiên là load mấy file dataset (ở đây chỉ hỗ trợ csv với tsv, không có json với parquet).
@@ -14,7 +17,7 @@ Sorry tui quên, cách thức code tui hoạt động thế này:
     - input_ids: Từng token chuyển về dạng ids số nguyên map với token tương ứng trong tokenizer của PhoBERT.
     - attention_mask: Cái này là để cho BERT biết token nào cần được chú ý tới và không phải padding (giá trị  1), hoặc có thể bỏ qua và là padding (giá trị 0).
     - token_types_id: Cái này là để cho BERT biết là cái loại token đặc biệt như [CLS] (cho phân loại), [MASK] (điền token khuyết), [SEP] (cho biết token tách từng câu do nếu truyền nhiều câu vào thì output thì chỉ gồm 1 vector nên token này cần để BERT biết ở đâu là tới câu khác),... Cái này không cần lắm cho bài toán phân loại này nên có thể bỏ qua.
-    - label: Nhãn (cái này chắc biết rồi).
+    - label: Nhãn.
 
 
 #### Cấu trúc mô hình DocBERT:

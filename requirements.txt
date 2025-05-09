@@ -10,3 +10,4 @@ maturin
 underthesea --only-binary :all:
 accelerate
 streamlit
+google-genai

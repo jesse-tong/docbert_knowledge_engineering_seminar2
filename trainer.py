@@ -47,6 +47,7 @@ class Trainer:
         
         # Optimizer with weight decay (L2 regularization)
         # Using different learning rates for BERT and classifier
+        # Exclude layer normalization and bias from weight decay
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
             {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
@@ -60,7 +61,7 @@ class Trainer:
         # Learning rate scheduler
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=0.5, patience=2, verbose=True)
         
-        # Loss function with label smoothing for better generalization
+        # As this is a multi-class classification task, we use CrossEntropyLoss
         self.criterion = nn.CrossEntropyLoss()
         
         # Training parameters
@@ -132,7 +133,6 @@ class Trainer:
                 # Backward pass
                 loss.backward()
                 
-                # Update weights if we've accumulated enough gradients
                 if (i + 1) % self.gradient_accumulation_steps == 0:
                     # Gradient clipping to prevent exploding gradients
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
@@ -160,13 +160,11 @@ class Trainer:
                 all_predictions.extend(preds.cpu().tolist())
                 all_labels.extend(labels.cpu().tolist())
                 
-                # Update progress bar with current loss
                 train_iterator.set_postfix({'loss': f"{loss.item():.4f}"})
             
-            # Calculate training metrics
             train_loss /= len(self.train_loader)
             if self.num_categories > 1:
-                # Flatten the list of predictions and labels
+
                 all_predictions = np.concatenate(all_predictions)
                 all_labels = np.concatenate(all_labels)
                 
@@ -179,7 +177,6 @@ class Trainer:
             # Validation phase
             val_loss, val_acc, val_f1, val_precision, val_recall = self.evaluate(self.val_loader, "Validation")
 
-            # Log validation metrics
             logger.info(f"Validation - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}, "
                         f"Precision: {val_precision:.4f}, Recall: {val_recall:.4f}")
             

@@ -51,31 +51,25 @@ class DocumentBiLSTM(nn.Module):
             seq_lengths, indices = torch.sort(seq_lengths, descending=True)
             sorted_embedded = embedded[indices]
             
-            # Pack the embedded sequences
             packed_embedded = nn.utils.rnn.pack_padded_sequence(
                 sorted_embedded, seq_lengths, batch_first=True, enforce_sorted=True
             )
             
-            # Pass through LSTM
             packed_output, (hidden, cell) = self.lstm(packed_embedded)
             
-            # Unpack the sequence
             output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
             
             # Get the hidden states in correct order
             _, restore_indices = torch.sort(indices)
             hidden = hidden[:, restore_indices]
         else:
-            # Standard processing without masking
             _, (hidden, cell) = self.lstm(embedded)
         
         # Concatenate the final forward and backward hidden states
         hidden_cat = torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1)
         
-        # Apply layer normalization (improves stability)
         normalized = self.layer_norm(hidden_cat)
         
-        # Apply dropout to hidden state
         dropped = self.dropout(normalized)
             
         # prediction = [batch size, output dim]
