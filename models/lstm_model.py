@@ -60,7 +60,7 @@ class DocumentBiLSTM(nn.Module):
             output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
             
             # Get the hidden states in correct order
-            _, restore_indices = torch.sort(indices)
+            _, restore_indices = torch.sort(output)
             hidden = hidden[:, restore_indices]
         else:
             _, (hidden, cell) = self.lstm(embedded)
